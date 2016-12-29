@@ -1,0 +1,21 @@
+MVC:
+Program that can do two things:
+- extract water bitmap from geotiff
+- run CNN on the geotiff and water bitmap
+
+Nice to haves:
+- CLI
+- choosing between different satellite providers
+- extensive documentation
+- several different models
+- automatic evaluation of models
+- visualisation of results
+
+Functions:
+- read_geotiff
+- lat_lon_to_pixel
+- get_bounds (from geotiff)
+- extract_water (from bounds) (needs cache)
+- create_bitmap_for_geotiff
+- create_tiles_from_geotiff
+
