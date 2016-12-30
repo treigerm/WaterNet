@@ -10,6 +10,7 @@ Nice to haves:
 - several different models
 - automatic evaluation of models
 - visualisation of results
+- Docker
 
 Functions:
 - read_geotiff
@@ -18,4 +19,3 @@ Functions:
 - extract_water (from bounds) (needs cache)
 - create_bitmap_for_geotiff
 - create_tiles_from_geotiff
-
