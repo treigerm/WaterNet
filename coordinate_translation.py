@@ -7,9 +7,9 @@ def lat_lon_to_pixel(point, raster_dataset):
     lat, lon = point
     src_crs = "EPSG:4326"
     dst_crs = raster_dataset.crs
-    xs, ys = rasterio.warp.transform(src_crs, dst_crs, [lat], [lon])
+    xs, ys = rasterio.warp.transform(src_crs, dst_crs, [lon], [lat])
     rows, cols = rasterio.transform.rowcol(raster_dataset.transform, xs, ys)
-    return (rows[0], cols[0])
+    return (cols[0], rows[0])
 
 def pixel_to_lat_lon(pixel, raster_dataset):
     x, y = raster_dataset.transform * pixel
