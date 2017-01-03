@@ -2,7 +2,6 @@
 
 import rasterio
 import rasterio.warp
-import Shapely
 import numpy as np
 import itertools
 from osm_feature_extraction import extract_water
@@ -34,8 +33,31 @@ def get_bounds(raster_dataset):
     }
 
 
-def create_tiles(raster_dataset, tile_size):
-    pass
+def read_bitmap(file_name):
+    """TODO: Docstring."""
+    # TODO: Outputshape of bitmap?
+    raster_dataset, bitmap = read_geotiff(file_name)
+    bitmap[bitmap == 255] = 1
+    return raster_dataset, bitmap
+
+
+def create_tiles(bands_data, tile_size, tile_overlap):
+    """From https://github.com/trailbehind/DeepOSM."""
+    # TODO: Select bands.
+    # TODO: Add cache and have tiled data store path to raster data.
+
+    rows, cols, n_bands = bands_data.shape
+
+    all_tiled_data = []
+
+    for x in range(0, cols, tile_size - tile_overlap):
+        for y in range(0, rows, tile_size - tile_overlap):
+            in_bounds = x + tile_size < rows and y + tile_size < cols
+            if in_bounds:
+                new_tile = bands_data[x:x + tile_size, y:y + tile_size, 0:n_bands]
+                all_tiled_data.append(new_tile)
+
+    return all_tiled_data
 
 
 def create_bitmap(raster_dataset):
@@ -47,19 +69,3 @@ def create_bitmap(raster_dataset):
         feature = [ lat_lon_to_pixel(point, raster_dataset) for point in feature ]
         bitmap = add_feature(bitmap, feature)
     return bitmap
-
-
-# TODO: Different feature adding for way and relation.
-def add_feature(bitmap, feature):
-    """TODO: Docstring"""
-    polygon = Shapely.Polygon(feature)
-    points_in_polygon = get_points_in_polygon(polygon)
-    for x, y in points_in_polygon:
-        # TODO: Check if x y in bounds
-        bitmap[y][x] = 1
-    return bitmap
-
-def get_points_in_polygon(polygon):
-    minx, miny, maxx, maxy = polygon.bounds
-    possible_points = itertools.product(range(minx, maxx+1), range(miny, maxy+1))
-    return [ point for point in possible_points if polygon.contains(point) ]

@@ -1,21 +1,28 @@
 MVC:
 Program that can do two things:
-- extract water bitmap from geotiff
-- run CNN on the geotiff and water bitmap
+- extract water bitmap from GeoTIFF
+- run CNN on the GeoTIFF and water bitmap
 
 Nice to haves:
-- CLI
+- CLI (one command for creating training data and one for training)
 - choosing between different satellite providers
 - extensive documentation
 - several different models
 - automatic evaluation of models
-- visualisation of results
+- visualization of results
 - Docker
 
-Functions:
-- read_geotiff
-- lat_lon_to_pixel
-- get_bounds (from geotiff)
-- extract_water (from bounds) (needs cache)
-- create_bitmap_for_geotiff
-- create_tiles_from_geotiff
+Desired behavior:
+Specify several GeoTIFF images with corresponding shapefiles
+(=> Specify if using cache)
+(=> Specify tile_size)
+=> specify training model
+=> output results in forms of GeoTIFF and confusion matrix
+
+File names:
+- Shapefile with transformed coordinates: {satellite_img_name}_water_polygons.npy
+- Bitmap as GeoTIFF: {satellite_img_name}_water.tif
+- Bitmap as numpy: {satellite_img_name}_water.npy
+- Tiled satellite image and bitmap: {satellite_img_name}_{tile_size}_tiles.pickle
+    - Store as {"features": features, "labels": labels, "tile_size": tile_size}
+- TODO: File names for models

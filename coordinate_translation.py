@@ -21,3 +21,10 @@ def pixel_to_lat_lon(pixel, raster_dataset):
     dst_crs = "EPSG:4326"
     lats, lons = rasterio.warp.transform(src_crs, dst_crs, [x], [y])
     return (lats[0], lons[0])
+
+def lat_lon_to_raster_crs(point, raster_dataset):
+    lat, lon = point
+    src_crs = "EPSG:4326"
+    dst_crs = raster_dataset.crs
+    xs, ys = rasterio.warp.transform(src_crs, dst_crs, [lon], [lat])
+    return xs[0], ys[0]
