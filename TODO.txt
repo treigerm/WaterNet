@@ -20,7 +20,8 @@ Specify several GeoTIFF images with corresponding shapefiles
 => output results in forms of GeoTIFF and confusion matrix
 
 File names:
-- Shapefile with transformed coordinates: {satellite_img_name}_water_polygons.npy
+- Shapefile with transformed coordinates: {shapefile_name}_{CRS}_water_polygons.npy
+# TODO: UPDATE
 - Bitmap as GeoTIFF: {satellite_img_name}_water.tif
 - Bitmap as numpy: {satellite_img_name}_water.npy
 - Tiled satellite image and bitmap: {satellite_img_name}_{tile_size}_tiles.pickle

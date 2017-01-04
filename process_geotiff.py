@@ -50,6 +50,7 @@ def create_tiles(bands_data, tile_size, tile_overlap):
 
     all_tiled_data = []
 
+    # TODO: Rename to row and col
     for x in range(0, cols, tile_size - tile_overlap):
         for y in range(0, rows, tile_size - tile_overlap):
             in_bounds = x + tile_size < rows and y + tile_size < cols
