@@ -4,7 +4,7 @@ import rasterio.features
 import time
 import os
 from coordinate_translation import lat_lon_to_raster_crs
-from process_geotiff import read_geotiff, read_bitmap, create_tiles
+from process_geotiff import read_geotiff, read_bitmap, create_tiles, image_from_tiles, overlay_bitmap
 import numpy as np
 
 DATA_DIR = "/Users/Tim/dev/python/DeepWater/data/"
@@ -116,15 +116,15 @@ def get_file_name(file_path):
 
 if __name__ == '__main__':
     tile_size = 10
-    tile_overlap = 0
     geotiffs = [(muenster_img, [muenster_water])]
-    features = np.empty((0,tile_size,tile_size,3))
-    labels = np.empty((0,tile_size,tile_size,1)) # TODO: Check shape
+    features = []
+    labels = []
+    water_img = None
     for geotiff, shapefiles in geotiffs:
         dataset, bands = read_geotiff(geotiff)
         water_img = create_image(dataset, shapefiles, geotiff)
         water_img[water_img == 255] = 1
-        tiled_bands = create_tiles(bands, tile_size, tile_overlap)
-        tiled_bitmap = create_tiles(water_img, tile_size, tile_overlap)
-        features = np.concatenate((features, tiled_bands), axis=0)
-        labels = np.concatenate((labels, tiled_bitmap), axis=0)
+        tiled_bands = create_tiles(bands, tile_size)
+        tiled_bitmap = create_tiles(water_img, tile_size)
+        features += tiled_bands
+        labels += tiled_bitmap

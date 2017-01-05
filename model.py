@@ -16,7 +16,7 @@ def train_model(features, labels, tile_size):
     features = normalize_input(features)
     model = create_model(features, tile_size)
     print("Start training.")
-    model.fit(features, labels) # TODO: Hyperparameters.
+    model.fit(features, labels, validation_set=0.1) # TODO: Hyperparameters.
 
 def create_model(features, tile_size):
     # TODO: Declare 3 a variable as num_channels.
@@ -56,4 +56,4 @@ if __name__ == '__main__':
         labels = np.concatenate((labels, tiled_bitmap), axis=0)
 
     labels = np.reshape(labels, (labels.shape[0], tile_size*tile_size))
-    train_model(features, labels, tile_size)
+    train_model(features[:1000], labels[:1000], tile_size)

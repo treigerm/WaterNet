@@ -41,7 +41,7 @@ def read_bitmap(file_name):
     return raster_dataset, bitmap
 
 
-def create_tiles(bands_data, tile_size, tile_overlap):
+def create_tiles(bands_data, tile_size):
     """From https://github.com/trailbehind/DeepOSM."""
     # TODO: Select bands.
     # TODO: Add cache and have tiled data store path to raster data.
@@ -50,15 +50,35 @@ def create_tiles(bands_data, tile_size, tile_overlap):
 
     all_tiled_data = []
 
-    # TODO: Rename to row and col
-    for x in range(0, cols, tile_size - tile_overlap):
-        for y in range(0, rows, tile_size - tile_overlap):
-            in_bounds = x + tile_size < rows and y + tile_size < cols
+    for row in range(0, cols, tile_size):
+        for col in range(0, rows, tile_size):
+            in_bounds = row + tile_size < rows and col + tile_size < cols
             if in_bounds:
-                new_tile = bands_data[x:x + tile_size, y:y + tile_size, 0:n_bands]
-                all_tiled_data.append(new_tile)
+                new_tile = bands_data[row:row + tile_size, col:col + tile_size, 0:n_bands]
+                all_tiled_data.append((new_tile, (row, col))) # TODO: Add data path.
 
     return all_tiled_data
+
+def image_from_tiles(tiles, tile_size, image_shape):
+    image = np.zeros(image_shape, dtype=np.uint8)
+
+    for tile, (row, col) in tiles:
+        image[row:row + tile_size, col:col + tile_size, :] = tile
+
+    return image
+
+
+def overlay_bitmap(bitmap, raster_dataset, out_path):
+    # TODO: Choose color.
+    red, green, blue = raster_dataset.read()
+    red[bitmap == 1] = 0
+    green[bitmap == 1] = 0
+    blue[bitmap == 1] = blue
+    profile = raster_dataset.profile
+    with rasterio.open(out_path, 'w', **profile) as dst:
+        dst.write(red, 1)
+        dst.write(green, 2)
+        dst.write(blue, 3)
 
 
 def create_bitmap(raster_dataset):
