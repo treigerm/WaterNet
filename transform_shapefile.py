@@ -1,8 +1,10 @@
 import fiona
+import pickle
 import rasterio
 import rasterio.features
 import time
 import os
+from config import TILES_DIR
 from coordinate_translation import lat_lon_to_raster_crs
 from process_geotiff import read_geotiff, read_bitmap, create_tiles, image_from_tiles, overlay_bitmap
 import numpy as np
@@ -62,7 +64,6 @@ def transfrom_coordinates(geometries, dataset, cache_path):
 
 def create_image(raster_dataset, shapefile_paths, satellite_path):
     # TODO: Better naming.
-    # TODO: Load from cache.
     satellite_img_name = get_file_name(satellite_path)
     water_img_cache = "{}{}_water.tif".format(CACHE_DIR, satellite_img_name)
 
@@ -113,6 +114,48 @@ def get_file_name(file_path):
     basename = os.path.basename(file_path)
     # Make sure we don't include the file extension.
     return os.path.splitext(basename)[0]
+
+def extract_features_and_labels(dataset, tile_size):
+    features = []
+    labels = []
+
+    for geotiff_path, shapefile_paths in dataset:
+        satellite_img_name = get_file_name(geotiff_path)
+        cache_file_name = "{}{}_{}.pickle".format(TILES_DIR, satellite_img_name, tile_size)
+        try:
+            print("Load from cache.")
+            with open(cache_file_name) as f:
+                tiles = pickle.open(f)
+                features += f["features"]
+                labels += f["labels"]
+
+            continue
+        except IOError as e:
+            print("Cache not available. Compute tiles.")
+
+        dataset, bands = read_geotiff(geotiff_path)
+        water_img = create_image(dataset, shapefile_paths, geotiff_path)
+        water_img[water_img == 255] = 1
+        tiled_bands = create_tiles(bands, tile_size)
+        tiled_bitmap = create_tiles(water_img, tile_size)
+
+        print("Store tile data at {}.".format(cache_file_name))
+        with open(cache_file_name, "wb") as out:
+            pickle.dump({"features": tiled_bands, "labels": tiled_bitmap}, out)
+
+        features += tiled_bands
+        labels += tiled_bitmap
+
+    return features, labels
+
+def preprocess_data(tile_size, dataset):
+    # TODO: Cache for full dataset.
+
+    features_train, labels_train = extract_features_and_labels(dataset["train"], tile_size)
+    features_test, labels_test = extract_features_and_labels(dataset["test"], tile_size)
+
+    return features_train, features_test, labels_train, labels_test
+
 
 if __name__ == '__main__':
     tile_size = 10

@@ -14,7 +14,7 @@ Nice to haves:
 
 Desired behavior:
 Specify several GeoTIFF images with corresponding shapefiles (not CLI)
-(=> Specify if using cache) 
+(=> Specify if using cache)
 (=> Specify tile_size)
 => specify dataset
 => specify training model
@@ -36,16 +36,16 @@ DeepWater/
     output/
       imgs/
       logs/
-      
 
-    
+
+
 File names:
-- Shapefile with transformed coordinates: {shapefile_name}_{CRS}_water_polygons.npy
+- Numpy with transformed coordinates: {shapefile_name}_{CRS}_water_polygons.npy
 - Bitmap as GeoTIFF: {satellite_img_name}_water.tif
 - Bitmap as numpy: {satellite_img_name}_water.npy
 - Tiled satellite image and bitmap: {satellite_img_name}_{tile_size}_tiles.pickle
-    - Store as {"features": features, "labels": labels, "tile_size": tile_size}
-- Trained model: {model_name}_{parameters}_model # TODO: File extension? 
+    - Store as {"features": features, "labels": labels}
+- Trained model: {model_name}_{parameters}_model # TODO: File extension?
 - GeoTIFF with overlayed predictions: {satellite_img_name}_{model_id}.tif
 - Log file: {model_id} # TODO: File extension?
 - Model-ID: {parameters}
