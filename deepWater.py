@@ -36,7 +36,7 @@ def main():
         # TODO: Load from cache.
         pass
 
-    if args.initialise_model:
+    if args.init_model:
         model = init_model(tile_size)
     else:
         # TODO: Load from cache.

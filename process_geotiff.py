@@ -7,7 +7,7 @@ import itertools
 from osm_feature_extraction import extract_water
 
 
-def read_geotiff(file_name, satellite_type="sentinel-2"):
+def read_geotiff(file_name):
     """TODO: Docstring."""
     raster_dataset = rasterio.open(file_name)
     bands = [raster_dataset.read(band_number)
