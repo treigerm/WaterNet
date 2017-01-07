@@ -28,6 +28,7 @@ DeepWater/
       Sentinel-2/
       Shapefiles/
     working/
+      water_polygons/
       train_data/
         tiles/
         water_bitmaps/

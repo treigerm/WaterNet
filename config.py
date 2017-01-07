@@ -6,6 +6,7 @@ SHAPEFILE_DIR = DATA_DIR + "input/Shapefiles/"
 TILES_DIR = TRAIN_DATA_DIR + "tiles/"
 WATER_BITMAPS_DIR = TRAIN_DATA_DIR + "water_bitmaps/"
 
+WATER_POLYGONS_DIR = DATA_DIR + "working/water_polygons/"
 MODELS_DIR = DATA_DIR + "working/models/"
 
 OUTPUT_DIR = DATA_DIR + "output/"

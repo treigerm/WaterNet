@@ -4,9 +4,6 @@ import overpass
 
 
 def extract_water(bounds):
-    # TODO: Test with bounding box (51.799,7.22,51.81,7.24)
-    # TODO: Create cache
-    # TODO: Also find relations
     api = overpass.API()
     bounding_box = "({south}, {west}, {north}, {east})".format(bounds)
     way_query = overpass.WayQuery('[natural="water"]{}'.format(bounding_box))

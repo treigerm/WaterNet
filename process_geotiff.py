@@ -44,7 +44,6 @@ def read_bitmap(file_name):
 def create_tiles(bands_data, tile_size):
     """From https://github.com/trailbehind/DeepOSM."""
     # TODO: Select bands.
-    # TODO: Add cache and have tiled data store path to raster data.
 
     rows, cols, n_bands = bands_data.shape
 
