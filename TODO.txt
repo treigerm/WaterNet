@@ -13,17 +13,39 @@ Nice to haves:
 - Docker
 
 Desired behavior:
-Specify several GeoTIFF images with corresponding shapefiles
-(=> Specify if using cache)
+Specify several GeoTIFF images with corresponding shapefiles (not CLI)
+(=> Specify if using cache) 
 (=> Specify tile_size)
+=> specify dataset
 => specify training model
-=> output results in forms of GeoTIFF and confusion matrix
+=> output results in forms of GeoTIFF and precision-recall curve
 
+Project structure:
+DeepWater/
+  code/
+  data/
+    input/
+      Sentinel-2/
+      Shapefiles/
+    working/
+      train_data/
+        tiles/
+        water_bitmaps/
+      models/
+        {model_id}/
+    output/
+      imgs/
+      logs/
+      
+
+    
 File names:
 - Shapefile with transformed coordinates: {shapefile_name}_{CRS}_water_polygons.npy
-# TODO: UPDATE
 - Bitmap as GeoTIFF: {satellite_img_name}_water.tif
 - Bitmap as numpy: {satellite_img_name}_water.npy
 - Tiled satellite image and bitmap: {satellite_img_name}_{tile_size}_tiles.pickle
     - Store as {"features": features, "labels": labels, "tile_size": tile_size}
-- TODO: File names for models
+- Trained model: {model_name}_{parameters}_model # TODO: File extension? 
+- GeoTIFF with overlayed predictions: {satellite_img_name}_{model_id}.tif
+- Log file: {model_id} # TODO: File extension?
+- Model-ID: {parameters}

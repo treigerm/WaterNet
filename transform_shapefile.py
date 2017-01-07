@@ -128,3 +128,7 @@ if __name__ == '__main__':
         tiled_bitmap = create_tiles(water_img, tile_size)
         features += tiled_bands
         labels += tiled_bitmap
+        bitmap = image_from_tiles(tiled_bitmap, tile_size, water_img.shape)
+        bitmap = np.reshape(bitmap, (5490, 5490))
+        print(bitmap.shape)
+        overlay_bitmap(bitmap, dataset, CACHE_DIR + "bitmap.tif")

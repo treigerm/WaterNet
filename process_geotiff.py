@@ -73,7 +73,7 @@ def overlay_bitmap(bitmap, raster_dataset, out_path):
     red, green, blue = raster_dataset.read()
     red[bitmap == 1] = 0
     green[bitmap == 1] = 0
-    blue[bitmap == 1] = blue
+    blue[bitmap == 1] = 255
     profile = raster_dataset.profile
     with rasterio.open(out_path, 'w', **profile) as dst:
         dst.write(red, 1)
