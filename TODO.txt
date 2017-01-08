@@ -34,9 +34,11 @@ DeepWater/
         water_bitmaps/
       models/
         {model_id}/
+          checkpoints/
     output/
-      imgs/
+      {model_id}/
       logs/
+      tensorboard/
 
 
 
@@ -48,5 +50,5 @@ File names:
     - Store as {"features": features, "labels": labels}
 - Trained model: {model_name}_{parameters}_model # TODO: File extension?
 - GeoTIFF with overlayed predictions: {satellite_img_name}_{model_id}.tif
-- Log file: {model_id} # TODO: File extension?
-- Model-ID: {parameters}
+- Log file: {model_id} 
+- Model-ID: {timestamp}_{dataset}

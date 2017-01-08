@@ -41,7 +41,7 @@ def read_bitmap(file_name):
     return raster_dataset, bitmap
 
 
-def create_tiles(bands_data, tile_size):
+def create_tiles(bands_data, tile_size, path_to_geotiff):
     """From https://github.com/trailbehind/DeepOSM."""
     # TODO: Select bands.
 
@@ -54,14 +54,14 @@ def create_tiles(bands_data, tile_size):
             in_bounds = row + tile_size < rows and col + tile_size < cols
             if in_bounds:
                 new_tile = bands_data[row:row + tile_size, col:col + tile_size, 0:n_bands]
-                all_tiled_data.append((new_tile, (row, col))) # TODO: Add data path.
+                all_tiled_data.append((new_tile, (row, col), path_to_geotiff)) 
 
     return all_tiled_data
 
 def image_from_tiles(tiles, tile_size, image_shape):
     image = np.zeros(image_shape, dtype=np.uint8)
 
-    for tile, (row, col) in tiles:
+    for tile, (row, col), _ in tiles:
         image[row:row + tile_size, col:col + tile_size, :] = tile
 
     return image

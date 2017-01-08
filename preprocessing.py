@@ -4,7 +4,7 @@ import rasterio
 import rasterio.features
 import time
 import os
-from config import TILES_DIR
+from config import TILES_DIR, WATER_POLYGONS_DIR, WATER_BITMAPS_DIR
 from coordinate_translation import lat_lon_to_raster_crs
 from process_geotiff import read_geotiff, read_bitmap, create_tiles, image_from_tiles, overlay_bitmap
 import numpy as np
@@ -40,9 +40,9 @@ def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size):
     cache_path = "{}{}_{}.pickle".format(
         TILES_DIR, satellite_img_name, tile_size)
     try:
-        print("Load from cache.")
+        print("Load tiles from {}.".format(cache_path))
         with open(cache_path) as f:
-            tiles = pickle.open(f)
+            tiles = pickle.load(f)
 
         return tiles["features"], tiles["labels"]
     except IOError as e:
@@ -54,11 +54,11 @@ def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size):
     # For the given satellite image create a bitmap which has 1 at every pixel which corresponds
     # to water in the satellite image. In order to do this we use water polygons from OpenStreetMap.
     # The water polygons are stored in forms of shapefiles and are given by "shapefile_paths".
-    water_bitmap = create_image(dataset, shapefile_paths, geotiff_path)
+    water_bitmap = create_bitmap(dataset, shapefile_paths, geotiff_path)
 
     # Tile the RGB bands of the satellite image and the bitmap.
-    tiled_bands = create_tiles(bands, tile_size)
-    tiled_bitmap = create_tiles(water_bitmap, tile_size)
+    tiled_bands = create_tiles(bands, tile_size, geotiff_path)
+    tiled_bitmap = create_tiles(water_bitmap, tile_size, geotiff_path)
 
     save_tiles(cache_path, tiled_bands, tiled_bitmap)
 
@@ -70,7 +70,7 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
     cache_file = "{}{}_water.tif".format(
         WATER_BITMAPS_DIR, satellite_img_name)
     try:
-        print("Load water bitmap from cache.")
+        print("Load water bitmap from {}".format(cache_file))
         _, image = read_geotiff(cache_file)
         # TODO: Don't resize image but change create_tiles.
         image = np.reshape(image, (image.shape[0], image.shape[1], 1))
@@ -168,20 +168,3 @@ def get_file_name(file_path):
     basename = os.path.basename(file_path)
     # Make sure we don't include the file extension.
     return os.path.splitext(basename)[0]
-
-"""
-if __name__ == '__main__':
-    tile_size = 10
-    geotiffs = [(muenster_img, [muenster_water])]
-    features = []
-    labels = []
-    water_img = None
-    for geotiff, shapefiles in geotiffs:
-        dataset, bands = read_geotiff(geotiff)
-        water_img = create_image(dataset, shapefiles, geotiff)
-        water_img[water_img == 255] = 1
-        tiled_bands = create_tiles(bands, tile_size)
-        tiled_bitmap = create_tiles(water_img, tile_size)
-        features += tiled_bands
-        labels += tiled_bitmap
-"""

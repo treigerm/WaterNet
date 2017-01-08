@@ -10,8 +10,8 @@ WATER_POLYGONS_DIR = DATA_DIR + "working/water_polygons/"
 MODELS_DIR = DATA_DIR + "working/models/"
 
 OUTPUT_DIR = DATA_DIR + "output/"
-OUTPUT_IMGS_DIR = OUTPUT_DIR + "imgs/"
 LOGS_DIR = OUTPUT_DIR + "logs/"
+TENSORBOARD_DIR = OUTPUT_DIR + "tensorboard/"
 
 MUENSTER_SHAPEFILE = DATA_DIR + "input/Shapefiles/muenster-regbez-latest-free/gis.osm_water_a_free_1.shp"
 NETHERLANDS_SHAPEFILE = DATA_DIR + "input/Shapefiles/netherlands-latest-free/gis.osm_water_a_free_1.shp"
@@ -24,4 +24,10 @@ SENTINEL_DATASET_TEST = [(MUENSTER_SATELLITE, [MUENSTER_SHAPEFILE])]
 SENTINEL_DATASET = {
     "train": SENTINEL_DATASET_TRAIN,
     "test": SENTINEL_DATASET_TEST
+}
+
+# TODO: Better naming.
+TEST_DATASET = {
+    "train": [(MUENSTER_SATELLITE, [MUENSTER_SHAPEFILE])],
+    "test": []
 }
