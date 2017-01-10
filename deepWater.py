@@ -3,10 +3,11 @@
 import argparse
 import time
 import os
+import sys
 from config import SENTINEL_DATASET, DEBUG_DATASET, OUTPUT_DIR, TRAIN_DATA_DIR
 from preprocessing import preprocess_data, visualise_features
 from model import init_model, train_model, evaluate_model
-from io_util import save_makedirs
+from io_util import save_makedirs, Logger
 
 datasets = {
     "sentinel": SENTINEL_DATASET,
@@ -36,6 +37,12 @@ def main():
 
     args = parser.parse_args()
 
+    timestamp = time.strftime("%d_%m_%Y_%H%M")
+    model_id = "{}_{}".format(timestamp, args.dataset)
+    model_dir = os.path.join(OUTPUT_DIR, model_id)
+    save_makedirs(model_dir)
+
+    sys.stdout = Logger(model_dir)
 
     if args.debug:
         dataset = datasets["test"]
@@ -60,8 +67,6 @@ def main():
         # TODO: Load from cache.
         pass
 
-    timestamp = time.strftime("%d_%m_%Y_%H%M")
-    model_id = "{}_{}".format(timestamp, args.dataset)
     if args.train_model:
         model = train_model(model, features_train, labels_train, args.tile_size, model_id, nb_epoch=args.epochs)
     else:
@@ -69,8 +74,6 @@ def main():
         pass
 
     if args.evaluate_model:
-        model_dir = os.path.join(OUTPUT_DIR, model_id)
-        save_makedirs(model_dir)
         evaluate_model(model, features_test, labels_test, args.tile_size, model_dir)
 
 if __name__ == '__main__':
