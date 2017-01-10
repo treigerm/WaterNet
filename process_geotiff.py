@@ -14,9 +14,12 @@ def read_geotiff(file_name):
     bands = read_bands(raster_dataset)
     return raster_dataset, bands
 
+
 def read_bands(raster_dataset):
-    bands = [raster_dataset.read(band_number)
-             for band_number in raster_dataset.indexes]
+    bands = [
+        raster_dataset.read(band_number)
+        for band_number in raster_dataset.indexes
+    ]
     bands = np.dstack(bands)
     return bands
 
@@ -30,12 +33,7 @@ def get_bounds(raster_dataset):
     dst_crs = "EPSG:4326"
     west, south, east, north = rasterio.warp.transform_bounds(
         src_crs, dst_crs, *raster_dataset.bounds)
-    return {
-        "west": west,
-        "south": south,
-        "east": east,
-        "north": north
-    }
+    return {"west": west, "south": south, "east": east, "north": north}
 
 
 def read_bitmap(file_name):
@@ -54,24 +52,18 @@ def create_tiles(bands_data, tile_size, path_to_geotiff):
 
     all_tiled_data = []
 
-    tile_indexes = itertools.product(range(0, rows, tile_size), range(0, cols, tile_size))
+    tile_indexes = itertools.product(
+        range(0, rows, tile_size), range(0, cols, tile_size))
 
     for (row, col) in tile_indexes:
         in_bounds = row + tile_size < rows and col + tile_size < cols
         if in_bounds:
-            new_tile = bands_data[row:row + tile_size, col:col + tile_size, 0:n_bands]
-            all_tiled_data.append((new_tile, (row, col), path_to_geotiff)) 
-
-    """
-    for row in range(0, cols, tile_size):
-        for col in range(0, rows, tile_size):
-            in_bounds = row + tile_size < rows and col + tile_size < cols
-            if in_bounds:
-                new_tile = bands_data[row:row + tile_size, col:col + tile_size, 0:n_bands]
-                all_tiled_data.append((new_tile, (row, col), path_to_geotiff)) 
-    """
+            new_tile = bands_data[row:row + tile_size, col:col + tile_size,
+                                  0:n_bands]
+            all_tiled_data.append((new_tile, (row, col), path_to_geotiff))
 
     return all_tiled_data
+
 
 def image_from_tiles(tiles, tile_size, image_shape):
     image = np.zeros(image_shape, dtype=np.uint8)
@@ -101,6 +93,8 @@ def create_bitmap(raster_dataset):
     water_features = extract_water(bounds)
     bitmap = np.zeros(raster_dataset.shape, dtype=np.int)
     for feature in water_features:
-        feature = [ lat_lon_to_pixel(point, raster_dataset) for point in feature ]
+        feature = [
+            lat_lon_to_pixel(point, raster_dataset) for point in feature
+        ]
         bitmap = add_feature(bitmap, feature)
     return bitmap
