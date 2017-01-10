@@ -69,7 +69,7 @@ def main():
         pass
 
     if args.evaluate_model:
-        model_dir = OUTPUT_DIR + model_id + "/"
+        model_dir = os.path.join(OUTPUT_DIR, model_id)
         save_makedirs(model_dir)
         evaluate_model(model, features_test, labels_test, args.tile_size, model_dir)
 

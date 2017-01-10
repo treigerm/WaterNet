@@ -42,8 +42,9 @@ def extract_features_and_labels(dataset, tile_size):
 def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size):
     # Try to load tiles from cache.
     satellite_img_name = get_file_name(geotiff_path)
-    cache_path = "{}{}_{}.pickle".format(
-        TILES_DIR, satellite_img_name, tile_size)
+    cache_file_name = "{}_{}.pickle".format(
+        satellite_img_name, tile_size)
+    cache_path = os.path.join(TILES_DIR, cache_file_name)
     try:
         print("Load tiles from {}.".format(cache_path))
         with open(cache_path) as f:
@@ -99,7 +100,8 @@ def reproject_dataset(geotiff_path):
         })
 
         satellite_img_name = get_file_name(geotiff_path)
-        out_path = WGS84_DIR + satellite_img_name + "_wgs84.tif"
+        out_file_name = "{}_wgs84.tif".format(satellite_img_name)
+        out_path = os.path.join(WGS84_DIR, out_file_name)
         with rasterio.open(out_path, 'w', **kwargs) as dst:
             for i in range(1, src.count + 1):
                 rasterio.warp.reproject(
@@ -116,11 +118,12 @@ def reproject_dataset(geotiff_path):
 
 def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
     satellite_img_name = get_file_name(satellite_path)
-    cache_file = "{}{}_water.tif".format(
-        WATER_BITMAPS_DIR, satellite_img_name)
+    cache_file_name = "{}_water.tif".format(
+        satellite_img_name)
+    cache_path = os.path.join(WATER_BITMAPS_DIR, cache_file_name)
     try:
-        print("Load water bitmap from {}".format(cache_file))
-        _, image = read_geotiff(cache_file)
+        print("Load water bitmap from {}".format(cache_path))
+        _, image = read_geotiff(cache_path)
         # TODO: Don't resize image but change create_tiles.
         image = np.reshape(image, (image.shape[0], image.shape[1], 1))
         image[image == 255] = 1
@@ -154,7 +157,7 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
                                         out_shape=raster_dataset.shape,
                                         transform=raster_dataset.transform)
 
-    save_image(cache_file, bitmap_image, raster_dataset)
+    save_image(cache_path, bitmap_image, raster_dataset)
 
     # TODO: Don't resize image but change create_tiles.
     bitmap_image = np.reshape(bitmap_image, (bitmap_image.shape[0], bitmap_image.shape[1], 1))
@@ -166,20 +169,22 @@ def visualise_features(features, tile_size, out_path):
     sorted_by_path = sorted(features, key=get_path)
     for path, predictions in itertools.groupby(sorted_by_path, get_path):
         satellite_img_name = get_file_name(path)
-        path_wgs84 = WGS84_DIR + satellite_img_name + "_wgs84.tif"
+        satellite_file_name = "{}_wgs84.tif".format(satellite_img_name)
+        path_wgs84 = os.path.join(WGS84_DIR, satellite_file_name)
         raster_dataset = rasterio.open(path_wgs84)
         bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
         bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
         bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
-        satellite_img_name = get_file_name(path)
-        overlay_bitmap(bitmap, raster_dataset, out_path + satellite_img_name + ".tif")
+        out_file_name = "{}.tif".format(satellite_img_name)
+        out = os.path.join(out_path, out_file_name)
+        overlay_bitmap(bitmap, raster_dataset, out)
 
 
 def transform_coordinates(geometries, dataset, shapefile_path):
     shapefile_name = get_file_name(shapefile_path)
-    cache_path = "{}{}_{}_water_polygons.npy".format(WATER_POLYGONS_DIR,
-                                                     shapefile_name,
-                                                     dataset.crs['init'])
+    cache_file_name = "{}_{}_water_polygons.npy".format(shapefile_name,
+                                                        dataset.crs['init'])
+    cache_path = os.path.join(WATER_POLYGONS_DIR, cache_file_name)
     try:
         print("Load coordinates from cache.")
         return np.load(cache_path)
@@ -188,7 +193,8 @@ def transform_coordinates(geometries, dataset, shapefile_path):
 
     start_index = 0
     checkpoint = len(geometries) // 20
-    checkpoint_path = "{}{}_{}_checkpoint.pickle".format(SHAPEFILE_CHECKPOINTS_DIR, shapefile_name, dataset.crs['init'])
+    checkpoint_file_name = "{}_{}_checkpoint.pickle".format(shapefile_name, dataset.crs['init'])
+    checkpoint_path = os.path.join(SHAPEFILE_CHECKPOINTS_DIR, checkpoint_file_name)
 
     try:
         with open(checkpoint_path, "rb") as out:

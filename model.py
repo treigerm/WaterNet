@@ -8,6 +8,7 @@ from keras.callbacks import ModelCheckpoint, TensorBoard
 import rasterio
 import pickle
 import itertools
+import os
 import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
@@ -35,12 +36,12 @@ def train_model(model,
     X, y = get_matrix_form(features, labels, tile_size)
     X = normalize_input(X)
 
-    model_dir = MODELS_DIR + model_id + "/"
+    model_dir = os.path.join(MODELS_DIR, model_id)
     save_makedirs(model_dir)
 
     checkpointer = None
     if checkpoints:
-        checkpoints_path = model_dir + "checkpoints/"
+        checkpoints_path = os.model.join(model_dir, "checkpoints")
         save_makedirs(checkpoints_path)
         checkpointer = ModelCheckpoint(checkpoints_path)
 
@@ -116,14 +117,13 @@ def visualise_predictions(predictions, labels, tile_size, out_path):
     sorted_by_path = sorted(predictions_transformed, key=get_path)
     for path, predictions in itertools.groupby(sorted_by_path, get_path):
         satellite_img_name = get_file_name(path)
-        path_wgs84 = WGS84_DIR + satellite_img_name + "_wgs84.tif"
+        path_wgs84 = os.path.join(WGS84_DIR, "{}_wgs84.tif".format(satellite_img_name))
         raster_dataset = rasterio.open(path_wgs84)
         bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
         bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
         bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
-        satellite_img_name = get_file_name(path)
-        overlay_bitmap(bitmap, raster_dataset,
-                       out_path + satellite_img_name + ".tif")
+        out_file = os.path.join(out_path, "{}.tif".format(satellite_img_name))
+        overlay_bitmap(bitmap, raster_dataset, out_file)
 
 
 def precision_recall_curve(y_true, y_predicted, out_path):
@@ -132,28 +132,32 @@ def precision_recall_curve(y_true, y_predicted, out_path):
     y_predicted = np.reshape(y_predicted, y_true.shape)
     precision, recall, thresholds = metrics.precision_recall_curve(y_true,
                                                                    y_predicted)
-    with open(out_path + "precision_recall.pickle", "wb") as out:
+    out_file = os.path.join(out_path, "precision_recall.pickle")
+    with open(out_file, "wb") as out:
         pickle.dump({
             "precision": precision,
             "recall": recall,
             "thresholds": thresholds
         }, out)
 
+    out_file = os.path.join(out_path, "precision_recall.png")
     plt.clf()
     plt.plot(recall, precision, label="Precision-Recall curve")
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.ylim([0.0, 1.05])
     plt.xlim([0.0, 1.0])
-    plt.savefig(out_path + "precision_recall.png")
+    plt.savefig(out_file)
 
 
 def save_model(model, path):
     print("Save trained model to {}.".format(path))
     model_json = model.to_json()
-    with open(path + "trained_model.json", "w") as json_file:
+    model_path = os.path.join(path, "trained_model.json")
+    with open(model_path, "w") as json_file:
         json_file.write(model_json)
-    model.save_weights(path + "trained_model_weights.hdf5")
+    weights_path = os.path.join(path, "trained_model_weights.hdf5")
+    model.save_weights(weights_path)
 
 
 def get_matrix_form(features, labels, tile_size):
