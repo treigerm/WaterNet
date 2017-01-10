@@ -6,6 +6,7 @@ import os
 from config import SENTINEL_DATASET, DEBUG_DATASET, OUTPUT_DIR, TRAIN_DATA_DIR
 from preprocessing import preprocess_data, visualise_features
 from model import init_model, train_model, evaluate_model
+from io_util import save_makedirs
 
 datasets = {
     "sentinel": SENTINEL_DATASET,
@@ -69,7 +70,7 @@ def main():
 
     if args.evaluate_model:
         model_dir = OUTPUT_DIR + model_id + "/"
-        os.makedirs(model_dir)
+        save_makedirs(model_dir)
         evaluate_model(model, features_test, labels_test, args.tile_size, model_dir)
 
 if __name__ == '__main__':

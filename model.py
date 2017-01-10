@@ -14,10 +14,12 @@ import matplotlib.pyplot as plt
 from process_geotiff import read_geotiff, read_bitmap, create_tiles, image_from_tiles, overlay_bitmap
 from preprocessing import get_file_name
 from config import TENSORBOARD_DIR, WGS84_DIR, MODELS_DIR
+from io_util import save_makedirs
 plt.style.use('ggplot')
 
 
 def normalize_input(features):
+    # TODO: Better normalization.
     features = features.astype(np.float32)
     return np.multiply(features, 1.0 / 255.0)
 
@@ -33,10 +35,13 @@ def train_model(model,
     X, y = get_matrix_form(features, labels, tile_size)
     X = normalize_input(X)
 
+    model_dir = MODELS_DIR + model_id + "/"
+    save_makedirs(model_dir)
+
     checkpointer = None
     if checkpoints:
-        checkpoints_path = MODELS_DIR + model_id + "/checkpoints/"
-        # TODO: Create path.
+        checkpoints_path = model_dir + "checkpoints/"
+        save_makedirs(checkpoints_path)
         checkpointer = ModelCheckpoint(checkpoints_path)
 
     tensorboarder = None
@@ -44,8 +49,11 @@ def train_model(model,
         tensorboarder = TensorBoard(log_dir=TENSORBOARD_DIR)
 
     callbacks = [c for c in [checkpointer, tensorboarder] if c]
+
     print("Start training.")
     model.fit(X, y, nb_epoch=nb_epoch, callbacks=callbacks, validation_split=0.1)
+
+    save_model(model, model_dir)
     return model
 
 
@@ -132,12 +140,20 @@ def precision_recall_curve(y_true, y_predicted, out_path):
         }, out)
 
     plt.clf()
-    plt.plot(recall, precision, lw=2, label="Precision-Recall curve")
+    plt.plot(recall, precision, label="Precision-Recall curve")
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.ylim([0.0, 1.05])
     plt.xlim([0.0, 1.0])
     plt.savefig(out_path + "precision_recall.png")
+
+
+def save_model(model, path):
+    print("Save trained model to {}.".format(path))
+    model_json = model.to_json()
+    with open(path + "trained_model.json", "w") as json_file:
+        json_file.write(model_json)
+    model.save_weights(path + "trained_model_weights.hdf5")
 
 
 def get_matrix_form(features, labels, tile_size):
