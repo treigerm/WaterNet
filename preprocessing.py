@@ -14,6 +14,9 @@ import numpy as np
 
 def preprocess_data(tile_size, dataset):
 
+    print('_' * 100)
+    print("Start preprocessing data.")
+
     features_train, labels_train = extract_features_and_labels(
         dataset["train"], tile_size)
     features_test, labels_test = extract_features_and_labels(

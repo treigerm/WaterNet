@@ -30,6 +30,8 @@ def main():
                         help="Determine which dataset to use.")
     parser.add_argument("--tile-size", default=64, type=int,
                         help="Choose the tile size.")
+    parser.add_argument("--epochs", default=10, type=int,
+                        help="Number of training epochs.")
 
     args = parser.parse_args()
 
@@ -60,7 +62,7 @@ def main():
     timestamp = time.strftime("%d_%m_%Y_%H%M")
     model_id = "{}_{}".format(timestamp, args.dataset)
     if args.train_model:
-        model = train_model(model, features_train, labels_train, args.tile_size, model_id)
+        model = train_model(model, features_train, labels_train, args.tile_size, model_id, nb_epoch=args.epochs)
     else:
         # TODO: Load from cache.
         pass
