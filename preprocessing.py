@@ -1,12 +1,14 @@
 import fiona
+import itertools
 import pickle
 import rasterio
 import rasterio.features
+import rasterio.warp 
 import time
 import os
-from config import TILES_DIR, WATER_POLYGONS_DIR, WATER_BITMAPS_DIR
+from config import TILES_DIR, WATER_POLYGONS_DIR, WATER_BITMAPS_DIR, SHAPEFILE_CHECKPOINTS_DIR, WGS84_DIR
 from coordinate_translation import lat_lon_to_raster_crs
-from process_geotiff import read_geotiff, read_bitmap, create_tiles, image_from_tiles, overlay_bitmap
+from process_geotiff import read_geotiff, read_bands, read_bitmap, create_tiles, image_from_tiles, overlay_bitmap
 import numpy as np
 
 
@@ -48,8 +50,9 @@ def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size):
     except IOError as e:
         print("Cache not available. Compute tiles.")
 
-    # Open the satellite image as a rasterio dataset and get its RGB bands.
-    dataset, bands = read_geotiff(geotiff_path)
+    # TODO: Comments
+    dataset = reproject_dataset(geotiff_path)
+    bands = read_bands(dataset)
 
     # For the given satellite image create a bitmap which has 1 at every pixel which corresponds
     # to water in the satellite image. In order to do this we use water polygons from OpenStreetMap.
@@ -60,9 +63,52 @@ def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size):
     tiled_bands = create_tiles(bands, tile_size, geotiff_path)
     tiled_bitmap = create_tiles(water_bitmap, tile_size, geotiff_path)
 
+    tiled_bands, tiled_bitmap = remove_empty_tiles(tiled_bands, tiled_bitmap, tile_size)
+
     save_tiles(cache_path, tiled_bands, tiled_bitmap)
 
     return tiled_bands, tiled_bitmap
+
+def remove_empty_tiles(tiled_bands, tiled_bitmap, tile_size, num_channels=3):
+    empty_tile = np.zeros((tile_size, tile_size, num_channels))
+    bands = []
+    bitmap = []
+    for i, (tile, position, path) in enumerate(tiled_bands):
+        is_empty_tile = np.array_equal(empty_tile, tile)
+        if not is_empty_tile:
+            bands.append(tiled_bands[i])
+            bitmap.append(tiled_bitmap[i])
+
+    return bands, bitmap
+
+def reproject_dataset(geotiff_path):
+    dst_crs = 'EPSG:4326'
+
+    with rasterio.open(geotiff_path) as src:
+        transform, width, height = rasterio.warp.calculate_default_transform(
+            src.crs, dst_crs, src.width, src.height, *src.bounds)
+        kwargs = src.meta.copy()
+        kwargs.update({
+            'crs': dst_crs,
+            'transform': transform,
+            'width': width,
+            'height': height
+        })
+
+        satellite_img_name = get_file_name(geotiff_path)
+        out_path = WGS84_DIR + satellite_img_name + "_wgs84.tif"
+        with rasterio.open(out_path, 'w', **kwargs) as dst:
+            for i in range(1, src.count + 1):
+                rasterio.warp.reproject(
+                    source=rasterio.band(src, i),
+                    destination=rasterio.band(dst, i),
+                    src_transform=src.transform,
+                    src_crs=src.crs,
+                    dst_transform=transform,
+                    dst_crs=dst_crs,
+                    resampling=rasterio.warp.Resampling.nearest)
+
+        return rasterio.open(out_path)
 
 
 def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
@@ -93,8 +139,8 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
             # The coordinates of each feature is given in (Lon, Lat) pairs. To create
             # a bitmap for the given "raster_dataset" we need to convert these pairs
             # into the coordinate reference system of the "raster_dataset".
-            geometries = transform_coordinates(
-                geometries, raster_dataset, shapefile_path)
+            #geometries = transform_coordinates(
+            #    geometries, raster_dataset, shapefile_path)
 
             water_features = np.concatenate((water_features, geometries), axis=0)
 
@@ -105,12 +151,25 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
                                         out_shape=raster_dataset.shape,
                                         transform=raster_dataset.transform)
 
-    save_image(cache_file, bimtap_image, raster_dataset)
+    save_image(cache_file, bitmap_image, raster_dataset)
 
     # TODO: Don't resize image but change create_tiles.
-    image = np.reshape(image, (image.shape[0], image.shape[1], 1))
-    image[image == 255] = 1
-    return image
+    bitmap_image = np.reshape(bitmap_image, (bitmap_image.shape[0], bitmap_image.shape[1], 1))
+    bitmap_image[bitmap_image == 255] = 1
+    return bitmap_image
+
+def visualise_features(features, tile_size, out_path):
+    get_path = lambda x: x[2]
+    sorted_by_path = sorted(features, key=get_path)
+    for path, predictions in itertools.groupby(sorted_by_path, get_path):
+        satellite_img_name = get_file_name(path)
+        path_wgs84 = WGS84_DIR + satellite_img_name + "_wgs84.tif"
+        raster_dataset = rasterio.open(path_wgs84)
+        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
+        bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
+        bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
+        satellite_img_name = get_file_name(path)
+        overlay_bitmap(bitmap, raster_dataset, out_path + satellite_img_name + ".tif")
 
 
 def transform_coordinates(geometries, dataset, shapefile_path):
@@ -124,9 +183,28 @@ def transform_coordinates(geometries, dataset, shapefile_path):
     except IOError as e:
         print("No cache file found.")
 
+    start_index = 0
+    checkpoint = len(geometries) // 20
+    checkpoint_path = "{}{}_{}_checkpoint.pickle".format(SHAPEFILE_CHECKPOINTS_DIR, shapefile_name, dataset.crs['init'])
+
+    try:
+        with open(checkpoint_path, "rb") as out:
+            cache = pickle.load(out)
+            geometries = cache["geometries"]
+            start_index = cache["index"]
+    except IOError as e:
+        print("Could not find checkpoint file.")
+
+
     print("Start computing coordinates.")
     t0 = time.time()
-    for i, feature in enumerate(geometries):
+    for i, feature in enumerate(geometries[start_index:]):
+        if i % checkpoint == 0:
+            print("Computed {} coordinates".format(i))
+            with open(checkpoint_path, "wb") as out:
+                pickle.dump({"geometries": geometries, "index": i}, out)
+            print("Wrote checkpoint.")
+
         if feature['type'] == 'Polygon':
             for j, points in enumerate(feature['coordinates']):
                 transformed_points = map(

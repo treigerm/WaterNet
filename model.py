@@ -10,7 +10,7 @@ from sklearn import metrics
 import matplotlib.pyplot as plt
 from process_geotiff import read_geotiff, read_bitmap, create_tiles, image_from_tiles, overlay_bitmap
 from preprocessing import get_file_name
-from config import TENSORBOARD_DIR
+from config import TENSORBOARD_DIR, WGS84_DIR
 plt.style.use('ggplot')
 
 
@@ -73,7 +73,9 @@ def visualise_predictions(predictions, labels, tile_size, out_path):
     get_path = lambda x: x[2]
     sorted_by_path = sorted(predictions_transformed, key=get_path)
     for path, predictions in itertools.groupby(sorted_by_path, get_path):
-        raster_dataset = rasterio.open(path)
+        satellite_img_name = get_file_name(path)
+        path_wgs84 = WGS84_DIR + satellite_img_name + "_wgs84.tif"
+        raster_dataset = rasterio.open(path_wgs84)
         bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
         bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
         bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))

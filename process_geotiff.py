@@ -2,6 +2,7 @@
 
 import rasterio
 import rasterio.warp
+import itertools
 import numpy as np
 import itertools
 from osm_feature_extraction import extract_water
@@ -10,10 +11,14 @@ from osm_feature_extraction import extract_water
 def read_geotiff(file_name):
     """TODO: Docstring."""
     raster_dataset = rasterio.open(file_name)
+    bands = read_bands(raster_dataset)
+    return raster_dataset, bands
+
+def read_bands(raster_dataset):
     bands = [raster_dataset.read(band_number)
              for band_number in raster_dataset.indexes]
     bands = np.dstack(bands)
-    return raster_dataset, bands
+    return bands
 
 
 def get_bounds(raster_dataset):
@@ -49,12 +54,22 @@ def create_tiles(bands_data, tile_size, path_to_geotiff):
 
     all_tiled_data = []
 
+    tile_indexes = itertools.product(range(0, rows, tile_size), range(0, cols, tile_size))
+
+    for (row, col) in tile_indexes:
+        in_bounds = row + tile_size < rows and col + tile_size < cols
+        if in_bounds:
+            new_tile = bands_data[row:row + tile_size, col:col + tile_size, 0:n_bands]
+            all_tiled_data.append((new_tile, (row, col), path_to_geotiff)) 
+
+    """
     for row in range(0, cols, tile_size):
         for col in range(0, rows, tile_size):
             in_bounds = row + tile_size < rows and col + tile_size < cols
             if in_bounds:
                 new_tile = bands_data[row:row + tile_size, col:col + tile_size, 0:n_bands]
                 all_tiled_data.append((new_tile, (row, col), path_to_geotiff)) 
+    """
 
     return all_tiled_data
 

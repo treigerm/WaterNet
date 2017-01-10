@@ -29,6 +29,7 @@ DeepWater/
       Shapefiles/
     working/
       water_polygons/
+        ceckpoints/
       train_data/
         tiles/
         water_bitmaps/
