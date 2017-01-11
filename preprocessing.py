@@ -3,7 +3,7 @@ import itertools
 import pickle
 import rasterio
 import rasterio.features
-import rasterio.warp 
+import rasterio.warp
 import time
 import os
 from config import TILES_DIR, WATER_POLYGONS_DIR, WATER_BITMAPS_DIR, SHAPEFILE_CHECKPOINTS_DIR, WGS84_DIR
@@ -147,12 +147,6 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
             # of the feature i.e. where it is located and what shape it has.
             geometries = [feature['geometry'] for feature in shapefile]
 
-            # The coordinates of each feature is given in (Lon, Lat) pairs. To create
-            # a bitmap for the given "raster_dataset" we need to convert these pairs
-            # into the coordinate reference system of the "raster_dataset".
-            #geometries = transform_coordinates(
-            #    geometries, raster_dataset, shapefile_path)
-
             water_features = np.concatenate((water_features, geometries), axis=0)
 
     # Now that we have the vector data of all water features in our satellite image
@@ -183,58 +177,6 @@ def visualise_features(features, tile_size, out_path):
         out_file_name = "{}.tif".format(satellite_img_name)
         out = os.path.join(out_path, out_file_name)
         overlay_bitmap(bitmap, raster_dataset, out)
-
-
-def transform_coordinates(geometries, dataset, shapefile_path):
-    shapefile_name = get_file_name(shapefile_path)
-    cache_file_name = "{}_{}_water_polygons.npy".format(shapefile_name,
-                                                        dataset.crs['init'])
-    cache_path = os.path.join(WATER_POLYGONS_DIR, cache_file_name)
-    try:
-        print("Load coordinates from cache.")
-        return np.load(cache_path)
-    except IOError as e:
-        print("No cache file found.")
-
-    start_index = 0
-    checkpoint = len(geometries) // 20
-    checkpoint_file_name = "{}_{}_checkpoint.pickle".format(shapefile_name, dataset.crs['init'])
-    checkpoint_path = os.path.join(SHAPEFILE_CHECKPOINTS_DIR, checkpoint_file_name)
-
-    try:
-        with open(checkpoint_path, "rb") as out:
-            cache = pickle.load(out)
-            geometries = cache["geometries"]
-            start_index = cache["index"]
-    except IOError as e:
-        print("Could not find checkpoint file.")
-
-
-    print("Start computing coordinates.")
-    t0 = time.time()
-    for i, feature in enumerate(geometries[start_index:]):
-        if i % checkpoint == 0:
-            print("Computed {} coordinates".format(i))
-            with open(checkpoint_path, "wb") as out:
-                pickle.dump({"geometries": geometries, "index": i}, out)
-            print("Wrote checkpoint.")
-
-        if feature['type'] == 'Polygon':
-            for j, points in enumerate(feature['coordinates']):
-                transformed_points = map(
-                    lambda (lon, lat): lat_lon_to_raster_crs((lat, lon), dataset), points)
-                geometries[i]['coordinates'][j] = transformed_points
-        else:
-            for j, ps in enumerate(feature['coordinates']):
-                for k, points in enumerate(ps):
-                    transformed_points = map(
-                        lambda (lon, lat): lat_lon_to_raster_crs((lat, lon), dataset), points)
-                    geometries[i]['coordinates'][j][k] = transformed_points
-    t1 = time.time()
-    print("Finished computing coordinates. Took {}s".format(t1 - t0))
-
-    np.save(cache_path, geometries)
-    return geometries
 
 
 def save_tiles(file_path, tiled_features, tiled_labels):

@@ -20,8 +20,8 @@ plt.style.use('ggplot')
 
 
 def normalize_input(features):
-    # TODO: Better normalization.
     features = features.astype(np.float32)
+
     return np.multiply(features, 1.0 / 255.0)
 
 
