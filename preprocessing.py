@@ -67,19 +67,24 @@ def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size):
     tiled_bands = create_tiles(bands, tile_size, geotiff_path)
     tiled_bitmap = create_tiles(water_bitmap, tile_size, geotiff_path)
 
-    tiled_bands, tiled_bitmap = remove_empty_tiles(tiled_bands, tiled_bitmap, tile_size)
+    tiled_bands, tiled_bitmap = remove_edge_tiles(tiled_bands, tiled_bitmap, tile_size, dataset.shape)
 
     save_tiles(cache_path, tiled_bands, tiled_bitmap)
 
     return tiled_bands, tiled_bitmap
 
-def remove_empty_tiles(tiled_bands, tiled_bitmap, tile_size, num_channels=3):
-    empty_tile = np.zeros((tile_size, tile_size, num_channels))
+def remove_edge_tiles(tiled_bands, tiled_bitmap, tile_size, source_shape):
+    EDGE_BUFFER = 350
+    rows, cols = source_shape[0], source_shape[1]
+
     bands = []
     bitmap = []
-    for i, (tile, position, path) in enumerate(tiled_bands):
-        is_empty_tile = np.array_equal(empty_tile, tile)
-        if not is_empty_tile:
+    for i, (tile, (row, col), _) in enumerate(tiled_bands):
+        is_in_center = EDGE_BUFFER <= row and row <= (rows - EDGE_BUFFER) and EDGE_BUFFER <= col and col <= (cols - EDGE_BUFFER)
+        # Checks wether our tile contains a pixel which is only black. 
+        contains_black_pixel = [0,0,0] in tile
+        is_edge_tile = contains_black_pixel and not is_in_center
+        if not is_edge_tile:
             bands.append(tiled_bands[i])
             bitmap.append(tiled_bitmap[i])
 

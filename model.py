@@ -41,13 +41,15 @@ def train_model(model,
 
     checkpointer = None
     if checkpoints:
-        checkpoints_path = os.model.join(model_dir, "checkpoints")
+        checkpoints_path = os.path.join(model_dir, "checkpoints")
         save_makedirs(checkpoints_path)
-        checkpointer = ModelCheckpoint(checkpoints_path)
+        checkpoints_file = os.path.join(checkpoints_path, "weights.hdf5")
+        checkpointer = ModelCheckpoint(checkpoints_file)
 
     tensorboarder = None
     if tensorboard:
-        tensorboarder = TensorBoard(log_dir=TENSORBOARD_DIR)
+        log_dir = os.path.join(TENSORBOARD_DIR, model_id)
+        tensorboarder = TensorBoard(log_dir=log_dir)
 
     callbacks = [c for c in [checkpointer, tensorboarder] if c]
 
@@ -59,23 +61,53 @@ def train_model(model,
 
 
 def init_model(tile_size,
-               num_channels=3,
-               filter_size=12,
-               stride=4,
-               nb_filters=64):
+               architecture='one_layer',
+               nb_filters_1=64,
+               filter_size_1=12,
+               stride_1=(4, 4),
+               pool_size_1=(3, 3),
+               nb_filters_2=128,
+               filter_size_2=4,
+               stride_2=(1, 1)):
+
+    num_channels = 3
+
     model = Sequential()
 
-    model.add(
-        Convolution2D(
-            nb_filters,
-            filter_size,
-            filter_size,
-            subsample=(stride, stride),
-            input_shape=(tile_size, tile_size, num_channels)))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(3, 3)))
-    model.add(Flatten())
-    model.add(Dense(tile_size * tile_size, activation='sigmoid'))
+    if architecture == 'one_layer':
+        model.add(
+            Convolution2D(
+                nb_filters_1,
+                filter_size_1,
+                filter_size_1,
+                subsample=stride_1,
+                input_shape=(tile_size, tile_size, num_channels)))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=pool_size_1))
+        model.add(Flatten())
+        model.add(Dense(tile_size * tile_size))
+        model.add(Activation('sigmoid'))
+    elif architecture == 'two_layer':
+        model.add(
+            Convolution2D(
+                nb_filters_1,
+                filter_size_1,
+                filter_size_1,
+                subsample=stride_1,
+                input_shape=(tile_size, tile_size, num_channels)))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=pool_size_1))
+        model.add(
+            Convolution2D(
+                nb_filters_2,
+                filter_size_2,
+                filter_size_2,
+                subsample=stride_2))
+        model.add(Activation('relu'))
+        model.add(Flatten())
+        model.add(Dense(tile_size * tile_size))
+        model.add(Activation('sigmoid'))
+
 
     momentum = SGD(lr=0.005, momentum=0.9, decay=0.002)
 
@@ -101,6 +133,7 @@ def evaluate_model(model, features, labels, tile_size, out_path):
 
     visualise_predictions(predicted_bitmap, labels, tile_size, out_path)
 
+    print("Accuracy on test set: {}".format(metrics.accuracy_score(y_true, predicted_bitmap)))
     precision_recall_curve(y_true, y_predicted, out_path)
 
 

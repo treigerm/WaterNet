@@ -41,15 +41,12 @@ DeepWater/
       logs/
       tensorboard/
 
-
-
 File names:
 - Numpy with transformed coordinates: {shapefile_name}_{CRS}_water_polygons.npy
 - Bitmap as GeoTIFF: {satellite_img_name}_water.tif
 - Bitmap as numpy: {satellite_img_name}_water.npy
 - Tiled satellite image and bitmap: {satellite_img_name}_{tile_size}_tiles.pickle
     - Store as {"features": features, "labels": labels}
-- Trained model: {model_name}_{parameters}_model # TODO: File extension?
 - GeoTIFF with overlayed predictions: {satellite_img_name}_{model_id}.tif
-- Log file: {model_id} 
+- Log file: logfile.log
 - Model-ID: {timestamp}_{dataset}

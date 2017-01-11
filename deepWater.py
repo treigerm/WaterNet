@@ -9,72 +9,140 @@ from preprocessing import preprocess_data, visualise_features
 from model import init_model, train_model, evaluate_model
 from io_util import save_makedirs, Logger
 
-datasets = {
-    "sentinel": SENTINEL_DATASET,
-    "test": DEBUG_DATASET
-}
+datasets = {"sentinel": SENTINEL_DATASET, "test": DEBUG_DATASET}
+
+def create_parser():
+    parser = argparse.ArgumentParser(description="Process satellite images.")
+    parser.add_argument(
+        "-p, --preprocess_data",
+        dest="preprocess_data",
+        action="store_const",
+        const=True,
+        default=False,
+        help="When selected preprocess data.")
+    parser.add_argument(
+        "-i, --init-model",
+        dest="init_model",
+        action="store_const",
+        const=True,
+        default=False,
+        help="When selected initialise model.")
+    parser.add_argument(
+        "-t, --train-model",
+        dest="train_model",
+        action="store_const",
+        const=True,
+        default=False,
+        help="When selected train model.")
+    parser.add_argument(
+        "-e, --evaluate-model",
+        dest="evaluate_model",
+        action="store_const",
+        const=True,
+        default=False,
+        help="When selected evaluatel model.")
+    parser.add_argument(
+        "-d, --debug",
+        dest="debug",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Run on a small test dataset.")
+    parser.add_argument(
+        "-a, --architecture",
+        dest="architecture",
+        default="one_layer",
+        choices=["one_layer", "two_layer"],
+        help="Neural net architecture.")
+    parser.add_argument(
+        "-v, --visualise",
+        dest="visualise",
+        default=False,
+        action="store_const",
+        const=True,
+        help="Visualise labels.")
+    parser.add_argument(
+        "-T, --tensorboard",
+        dest="tensorboard",
+        default=False,
+        action="store_const",
+        const=True,
+        help="Store tensorboard data while training.")
+    parser.add_argument(
+        "-C, --checkpoints",
+        dest="checkpoints",
+        default=False,
+        action="store_const",
+        const=True,
+        help="Create checkpoints while training.")
+    parser.add_argument(
+        "--dataset",
+        default="sentinel",
+        choices=["sentinel"],
+        help="Determine which dataset to use.")
+    parser.add_argument(
+        "--tile-size", default=64, type=int, help="Choose the tile size.")
+    parser.add_argument(
+        "--epochs", default=10, type=int, help="Number of training epochs.")
+
+    return parser
 
 
 def main():
     # TODO: Check if dest needed.
-    parser = argparse.ArgumentParser(description="Process satellite images.")
-    parser.add_argument("-p, --preprocess_data", dest="preprocess_data", action="store_const",
-                        const=True, default=False, help="When selected preprocess data.")
-    parser.add_argument("-i, --init-model", dest="init_model", action="store_const",
-                        const=True, default=False, help="When selected initialise model.")
-    parser.add_argument("-t, --train-model", dest="train_model", action="store_const",
-                        const=True, default=False, help="When selected train model.")
-    parser.add_argument("-e, --evaluate-model", dest="evaluate_model", action="store_const",
-                        const=True, default=False, help="When selected evaluatel model.")
-    parser.add_argument("-d, --debug", dest="debug", action="store_const",
-                        const=True, default=False, help="Run on a small test dataset.")
-    parser.add_argument("--dataset", default="sentinel", choices=["sentinel"],
-                        help="Determine which dataset to use.")
-    parser.add_argument("--tile-size", default=64, type=int,
-                        help="Choose the tile size.")
-    parser.add_argument("--epochs", default=10, type=int,
-                        help="Number of training epochs.")
 
+    parser = create_parser()
     args = parser.parse_args()
 
-    timestamp = time.strftime("%d_%m_%Y_%H%M")
-    model_id = "{}_{}".format(timestamp, args.dataset)
-    model_dir = os.path.join(OUTPUT_DIR, model_id)
-    save_makedirs(model_dir)
-
-    sys.stdout = Logger(model_dir)
+    if args.init_model or args.train_model or args.evaluate_model:
+        timestamp = time.strftime("%d_%m_%Y_%H%M")
+        model_id = "{}_{}_{}".format(timestamp, args.dataset, args.architecture)
+        model_dir = os.path.join(OUTPUT_DIR, model_id)
+        save_makedirs(model_dir)
+        sys.stdout = Logger(model_dir)
 
     if args.debug:
         dataset = datasets["test"]
         args.dataset = "test"
-        features, _, labels, _ = preprocess_data(args.tile_size, dataset=dataset)
+        features, _, labels, _ = preprocess_data(
+            args.tile_size, dataset=dataset)
         features_train, features_test = features[:100], features[100:120]
         labels_train, labels_test = labels[:100], labels[100:120]
     elif args.preprocess_data:
         dataset = datasets[args.dataset]
-        features_train, features_test, labels_train, labels_test = preprocess_data(args.tile_size,
-                                                                                   dataset=dataset)
-        # TODO: Make option to visualise.
-        #visualise_features(labels_train, args.tile_size, TRAIN_DATA_DIR)
-        #visualise_features(labels_test, args.tile_size, TRAIN_DATA_DIR)
+        features_train, features_test, labels_train, labels_test = preprocess_data(
+            args.tile_size, dataset=dataset)
+        if args.visualise:
+            out_dir = os.path.join(TRAIN_DATA_DIR, "labels_images")
+            visualise_features(labels_train, args.tile_size, out_dir)
+            visualise_features(labels_test, args.tile_size, out_dir)
     else:
         pass
 
-
     if args.init_model:
-        model = init_model(args.tile_size)
+        model = init_model(args.tile_size, architecture=args.architecture)
     else:
         # TODO: Load from cache.
         pass
 
     if args.train_model:
-        model = train_model(model, features_train, labels_train, args.tile_size, model_id, nb_epoch=args.epochs)
+        model = train_model(
+            model,
+            features_train,
+            labels_train,
+            args.tile_size,
+            model_id,
+            nb_epoch=args.epochs,
+            checkpoints=args.checkpoints,
+            tensorboard=args.tensorboard)
     else:
         # TODO: Load from cache.
         pass
 
     if args.evaluate_model:
-        evaluate_model(model, features_test, labels_test, args.tile_size, model_dir)
+        evaluate_model(model, features_test, labels_test, args.tile_size,
+                       model_dir)
+
 
 if __name__ == '__main__':
     main()
