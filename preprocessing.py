@@ -4,15 +4,17 @@ import pickle
 import rasterio
 import rasterio.features
 import rasterio.warp
-import time
 import os
-from config import TILES_DIR, WATER_POLYGONS_DIR, WATER_BITMAPS_DIR, SHAPEFILE_CHECKPOINTS_DIR, WGS84_DIR
-from coordinate_translation import lat_lon_to_raster_crs
-from process_geotiff import read_geotiff, read_bands, read_bitmap, create_tiles, image_from_tiles, overlay_bitmap
+from config import TILES_DIR
+from config import WATER_BITMAPS_DIR
+from config import WGS84_DIR
+from process_geotiff import read_geotiff, read_bands, create_tiles, image_from_tiles, overlay_bitmap, reproject_dataset, visualise_features
+from io_util import get_file_name, save_tiles, save_tiles
 import numpy as np
 
 
 def preprocess_data(tile_size, dataset):
+    # TODO: Add only_cache option.
 
     print('_' * 100)
     print("Start preprocessing data.")
@@ -90,36 +92,6 @@ def remove_edge_tiles(tiled_bands, tiled_bitmap, tile_size, source_shape):
 
     return bands, bitmap
 
-def reproject_dataset(geotiff_path):
-    dst_crs = 'EPSG:4326'
-
-    with rasterio.open(geotiff_path) as src:
-        transform, width, height = rasterio.warp.calculate_default_transform(
-            src.crs, dst_crs, src.width, src.height, *src.bounds)
-        kwargs = src.meta.copy()
-        kwargs.update({
-            'crs': dst_crs,
-            'transform': transform,
-            'width': width,
-            'height': height
-        })
-
-        satellite_img_name = get_file_name(geotiff_path)
-        out_file_name = "{}_wgs84.tif".format(satellite_img_name)
-        out_path = os.path.join(WGS84_DIR, out_file_name)
-        with rasterio.open(out_path, 'w', **kwargs) as dst:
-            for i in range(1, src.count + 1):
-                rasterio.warp.reproject(
-                    source=rasterio.band(src, i),
-                    destination=rasterio.band(dst, i),
-                    src_transform=src.transform,
-                    src_crs=src.crs,
-                    dst_transform=transform,
-                    dst_crs=dst_crs,
-                    resampling=rasterio.warp.Resampling.nearest)
-
-        return rasterio.open(out_path)
-
 
 def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
     satellite_img_name = get_file_name(satellite_path)
@@ -163,42 +135,3 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
     bitmap_image[bitmap_image == 255] = 1
     return bitmap_image
 
-def visualise_features(features, tile_size, out_path):
-    get_path = lambda x: x[2]
-    sorted_by_path = sorted(features, key=get_path)
-    for path, predictions in itertools.groupby(sorted_by_path, get_path):
-        satellite_img_name = get_file_name(path)
-        satellite_file_name = "{}_wgs84.tif".format(satellite_img_name)
-        path_wgs84 = os.path.join(WGS84_DIR, satellite_file_name)
-        raster_dataset = rasterio.open(path_wgs84)
-        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
-        bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
-        bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
-        out_file_name = "{}.tif".format(satellite_img_name)
-        out = os.path.join(out_path, out_file_name)
-        overlay_bitmap(bitmap, raster_dataset, out)
-
-
-def save_tiles(file_path, tiled_features, tiled_labels):
-    print("Store tile data at {}.".format(file_path))
-    with open(file_path, "wb") as out:
-        pickle.dump({"features": tiled_features, "labels": tiled_labels}, out)
-
-
-def save_image(file_path, image, source):
-    print("Save result at {}.".format(file_path))
-    with rasterio.open(
-            file_path, 'w',
-            driver='GTiff',
-            dtype=rasterio.uint8,
-            count=1,
-            width=source.width,
-            height=source.height,
-            transform=source.transform) as dst:
-        dst.write(image, indexes=1)
-
-
-def get_file_name(file_path):
-    basename = os.path.basename(file_path)
-    # Make sure we don't include the file extension.
-    return os.path.splitext(basename)[0]

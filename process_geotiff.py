@@ -2,10 +2,11 @@
 
 import rasterio
 import rasterio.warp
+import os
 import itertools
 import numpy as np
-import itertools
-from osm_feature_extraction import extract_water
+from io_util import get_file_name
+from config import WGS84_DIR
 
 
 def read_geotiff(file_name):
@@ -24,24 +25,35 @@ def read_bands(raster_dataset):
     return bands
 
 
-def get_bounds(raster_dataset):
-    """TODO: Docstring."""
-    # Coordinate reference system of the GeoTIFF.
-    src_crs = raster_dataset.crs
-    # Destination coordinate reference system. We want to get the longitude
-    # and latitude so we use EPSG:4326 also known as WGS 84.
-    dst_crs = "EPSG:4326"
-    west, south, east, north = rasterio.warp.transform_bounds(
-        src_crs, dst_crs, *raster_dataset.bounds)
-    return {"west": west, "south": south, "east": east, "north": north}
+def reproject_dataset(geotiff_path):
+    dst_crs = 'EPSG:4326'
 
+    with rasterio.open(geotiff_path) as src:
+        transform, width, height = rasterio.warp.calculate_default_transform(
+            src.crs, dst_crs, src.width, src.height, *src.bounds)
+        kwargs = src.meta.copy()
+        kwargs.update({
+            'crs': dst_crs,
+            'transform': transform,
+            'width': width,
+            'height': height
+        })
 
-def read_bitmap(file_name):
-    """TODO: Docstring."""
-    # TODO: Outputshape of bitmap?
-    raster_dataset, bitmap = read_geotiff(file_name)
-    bitmap[bitmap == 255] = 1
-    return raster_dataset, bitmap
+        satellite_img_name = get_file_name(geotiff_path)
+        out_file_name = "{}_wgs84.tif".format(satellite_img_name)
+        out_path = os.path.join(WGS84_DIR, out_file_name)
+        with rasterio.open(out_path, 'w', **kwargs) as dst:
+            for i in range(1, src.count + 1):
+                rasterio.warp.reproject(
+                    source=rasterio.band(src, i),
+                    destination=rasterio.band(dst, i),
+                    src_transform=src.transform,
+                    src_crs=src.crs,
+                    dst_transform=transform,
+                    dst_crs=dst_crs,
+                    resampling=rasterio.warp.Resampling.nearest)
+
+        return rasterio.open(out_path)
 
 
 def create_tiles(bands_data, tile_size, path_to_geotiff):
@@ -87,14 +99,17 @@ def overlay_bitmap(bitmap, raster_dataset, out_path):
         dst.write(blue, 3)
 
 
-def create_bitmap(raster_dataset):
-    """TODO: Docstring"""
-    bounds = get_bounds(raster_dataset)
-    water_features = extract_water(bounds)
-    bitmap = np.zeros(raster_dataset.shape, dtype=np.int)
-    for feature in water_features:
-        feature = [
-            lat_lon_to_pixel(point, raster_dataset) for point in feature
-        ]
-        bitmap = add_feature(bitmap, feature)
-    return bitmap
+def visualise_features(features, tile_size, out_path):
+    get_path = lambda x: x[2]
+    sorted_by_path = sorted(features, key=get_path)
+    for path, predictions in itertools.groupby(sorted_by_path, get_path):
+        satellite_img_name = get_file_name(path)
+        satellite_file_name = "{}_wgs84.tif".format(satellite_img_name)
+        path_wgs84 = os.path.join(WGS84_DIR, satellite_file_name)
+        raster_dataset = rasterio.open(path_wgs84)
+        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
+        bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
+        bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
+        out_file_name = "{}.tif".format(satellite_img_name)
+        out = os.path.join(out_path, out_file_name)
+        overlay_bitmap(bitmap, raster_dataset, out)

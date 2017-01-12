@@ -5,17 +5,15 @@ from keras.layers import Dense, Activation, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.callbacks import ModelCheckpoint, TensorBoard
-import rasterio
 import pickle
-import itertools
 import os
 import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
-from process_geotiff import read_geotiff, read_bitmap, create_tiles, image_from_tiles, overlay_bitmap
-from preprocessing import get_file_name
-from config import TENSORBOARD_DIR, WGS84_DIR, MODELS_DIR
-from io_util import save_makedirs
+from process_geotiff import visualise_features
+from config import MODELS_DIR
+from config import TENSORBOARD_DIR
+from io_util import save_makedirs, save_model
 plt.style.use('ggplot')
 
 
@@ -146,17 +144,7 @@ def visualise_predictions(predictions, labels, tile_size, out_path):
         predictions_transformed.append(
             (predictions[i, :, :, :], position, path_to_geotiff))
 
-    get_path = lambda x: x[2]
-    sorted_by_path = sorted(predictions_transformed, key=get_path)
-    for path, predictions in itertools.groupby(sorted_by_path, get_path):
-        satellite_img_name = get_file_name(path)
-        path_wgs84 = os.path.join(WGS84_DIR, "{}_wgs84.tif".format(satellite_img_name))
-        raster_dataset = rasterio.open(path_wgs84)
-        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
-        bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
-        bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
-        out_file = os.path.join(out_path, "{}.tif".format(satellite_img_name))
-        overlay_bitmap(bitmap, raster_dataset, out_file)
+    visualise_features(predictions_transformed, tile_size, out_path)
 
 
 def precision_recall_curve(y_true, y_predicted, out_path):
@@ -181,16 +169,6 @@ def precision_recall_curve(y_true, y_predicted, out_path):
     plt.ylim([0.0, 1.05])
     plt.xlim([0.0, 1.0])
     plt.savefig(out_file)
-
-
-def save_model(model, path):
-    print("Save trained model to {}.".format(path))
-    model_json = model.to_json()
-    model_path = os.path.join(path, "trained_model.json")
-    with open(model_path, "w") as json_file:
-        json_file.write(model_json)
-    weights_path = os.path.join(path, "trained_model_weights.hdf5")
-    model.save_weights(weights_path)
 
 
 def get_matrix_form(features, labels, tile_size):
