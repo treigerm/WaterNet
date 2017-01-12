@@ -35,13 +35,10 @@ def train_model(model,
     X = normalize_input(X)
 
     model_dir = os.path.join(MODELS_DIR, model_id)
-    save_makedirs(model_dir)
 
     checkpointer = None
     if checkpoints:
-        checkpoints_path = os.path.join(model_dir, "checkpoints")
-        save_makedirs(checkpoints_path)
-        checkpoints_file = os.path.join(checkpoints_path, "weights.hdf5")
+        checkpoints_file = os.path.join(model_dir, "weights.hdf5")
         checkpointer = ModelCheckpoint(checkpoints_file)
 
     tensorboarder = None
@@ -59,6 +56,7 @@ def train_model(model,
 
 
 def init_model(tile_size,
+               model_id,
                architecture='one_layer',
                nb_filters_1=64,
                filter_size_1=12,
@@ -66,7 +64,10 @@ def init_model(tile_size,
                pool_size_1=(3, 3),
                nb_filters_2=128,
                filter_size_2=4,
-               stride_2=(1, 1)):
+               stride_2=(1, 1),
+               learning_rate=0.005,
+               momentum=0.9,
+               decay=0.002):
 
     num_channels = 3
 
@@ -107,7 +108,7 @@ def init_model(tile_size,
         model.add(Activation('sigmoid'))
 
 
-    momentum = SGD(lr=0.005, momentum=0.9, decay=0.002)
+    momentum = SGD(lr=learning_rate, momentum=momentum, decay=decay)
 
     model.compile(
         loss='categorical_crossentropy',
@@ -115,6 +116,11 @@ def init_model(tile_size,
         metrics=['accuracy'])
 
     print(model.summary())
+
+    model_dir = os.path.join(MODELS_DIR, model_id)
+    save_makedirs(model_dir)
+
+    save_model(model, model_dir)
 
     return model
 

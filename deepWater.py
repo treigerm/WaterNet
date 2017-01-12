@@ -5,16 +5,18 @@ import time
 import os
 import sys
 from config import SENTINEL_DATASET, DEBUG_DATASET, OUTPUT_DIR, TRAIN_DATA_DIR
-from preprocessing import preprocess_data, visualise_features
+from preprocessing import preprocess_data
 from model import init_model, train_model, evaluate_model
-from io_util import save_makedirs, Logger
+from io_util import save_makedirs, save_model_summary, load_model
+from process_geotiff import visualise_features
 
 datasets = {"sentinel": SENTINEL_DATASET, "test": DEBUG_DATASET}
+
 
 def create_parser():
     parser = argparse.ArgumentParser(description="Process satellite images.")
     parser.add_argument(
-        "-p, --preprocess_data",
+        "-p, --preprocess-data",
         dest="preprocess_data",
         action="store_const",
         const=True,
@@ -84,22 +86,25 @@ def create_parser():
         "--tile-size", default=64, type=int, help="Choose the tile size.")
     parser.add_argument(
         "--epochs", default=10, type=int, help="Number of training epochs.")
+    parser.add_argument(
+        "--model-id",
+        default=None,
+        type=str,
+        help="Model that should be used.")
 
     return parser
 
 
 def main():
-    # TODO: Check if dest needed.
-
     parser = create_parser()
     args = parser.parse_args()
 
     if args.init_model or args.train_model or args.evaluate_model:
         timestamp = time.strftime("%d_%m_%Y_%H%M")
-        model_id = "{}_{}_{}".format(timestamp, args.dataset, args.architecture)
+        model_id = args.model_id if args.model_id else "{}_{}_{}".format(
+            timestamp, args.dataset, args.architecture)
         model_dir = os.path.join(OUTPUT_DIR, model_id)
         save_makedirs(model_dir)
-        sys.stdout = Logger(model_dir)
 
     if args.debug:
         dataset = datasets["test"]
@@ -108,22 +113,38 @@ def main():
             args.tile_size, dataset=dataset)
         features_train, features_test = features[:100], features[100:120]
         labels_train, labels_test = labels[:100], labels[100:120]
-    elif args.preprocess_data:
+    elif args.train_model or args.evaluate_model:
         dataset = datasets[args.dataset]
-        features_train, features_test, labels_train, labels_test = preprocess_data(
-            args.tile_size, dataset=dataset)
+        load_from_cache = not args.preprocess_data
+        try:
+            features_train, features_test, labels_train, labels_test = preprocess_data(
+                args.tile_size, dataset=dataset, only_cache=load_from_cache)
+        except IOError:
+            print("Cache file does not exist. Please run again with -p flag.")
+
         if args.visualise:
             out_dir = os.path.join(TRAIN_DATA_DIR, "labels_images")
             visualise_features(labels_train, args.tile_size, out_dir)
             visualise_features(labels_test, args.tile_size, out_dir)
-    else:
-        pass
 
     if args.init_model:
-        model = init_model(args.tile_size, architecture=args.architecture)
+        hyperparameters = [
+            ("architecture", args.architecture),
+            ("nb_filters_1", 64),
+            ("filter_size_1", 12),
+            ("stride_1", (4, 4)),
+            ("pool_size_1", (3, 3)),
+            ("nb_filters_2", 128),
+            ("filter_size_2", 4),
+            ("stride_2", (1, 1)),
+            ("learning_rate", 0.005),
+            ("momentum", 0.9),
+            ("decay", 0.002)
+        ]
+        model = init_model(args.tile_size, model_id, **dict(hyperparameters))
+        save_model_summary(hyperparameters, model, model_dir)
     else:
-        # TODO: Load from cache.
-        pass
+        model = load_model(model_id)
 
     if args.train_model:
         model = train_model(
@@ -135,9 +156,6 @@ def main():
             nb_epoch=args.epochs,
             checkpoints=args.checkpoints,
             tensorboard=args.tensorboard)
-    else:
-        # TODO: Load from cache.
-        pass
 
     if args.evaluate_model:
         evaluate_model(model, features_test, labels_test, args.tile_size,

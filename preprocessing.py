@@ -9,31 +9,31 @@ from config import TILES_DIR
 from config import WATER_BITMAPS_DIR
 from config import WGS84_DIR
 from process_geotiff import read_geotiff, read_bands, create_tiles, image_from_tiles, overlay_bitmap, reproject_dataset, visualise_features
-from io_util import get_file_name, save_tiles, save_tiles
+from io_util import get_file_name, save_tiles, save_tiles, save_image
 import numpy as np
 
 
-def preprocess_data(tile_size, dataset):
+def preprocess_data(tile_size, dataset, only_cache=False):
     # TODO: Add only_cache option.
 
     print('_' * 100)
     print("Start preprocessing data.")
 
     features_train, labels_train = extract_features_and_labels(
-        dataset["train"], tile_size)
+        dataset["train"], tile_size, only_cache)
     features_test, labels_test = extract_features_and_labels(
-        dataset["test"], tile_size)
+        dataset["test"], tile_size, only_cache)
 
     return features_train, features_test, labels_train, labels_test
 
 
-def extract_features_and_labels(dataset, tile_size):
+def extract_features_and_labels(dataset, tile_size, only_cache=False):
     features = []
     labels = []
 
     for geotiff_path, shapefile_paths in dataset:
         tiled_features, tiled_labels = create_tiled_features_and_labels(
-            geotiff_path, shapefile_paths, tile_size)
+            geotiff_path, shapefile_paths, tile_size, only_cache)
 
         features += tiled_features
         labels += tiled_labels
@@ -41,7 +41,7 @@ def extract_features_and_labels(dataset, tile_size):
     return features, labels
 
 
-def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size):
+def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size, only_cache=False):
     # Try to load tiles from cache.
     satellite_img_name = get_file_name(geotiff_path)
     cache_file_name = "{}_{}.pickle".format(
@@ -54,6 +54,8 @@ def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size):
 
         return tiles["features"], tiles["labels"]
     except IOError as e:
+        if only_cache:
+            raise
         print("Cache not available. Compute tiles.")
 
     # TODO: Comments
