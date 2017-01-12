@@ -11,7 +11,7 @@ from evaluation import evaluate_model
 from io_util import save_makedirs, save_model_summary, load_model
 from process_geotiff import visualise_features
 
-datasets = {"sentinel": SENTINEL_DATASET, "test": DEBUG_DATASET}
+datasets = {"sentinel": SENTINEL_DATASET, "debug": DEBUG_DATASET}
 
 
 def create_parser():
@@ -100,16 +100,9 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    if args.init_model or args.train_model or args.evaluate_model:
-        timestamp = time.strftime("%d_%m_%Y_%H%M")
-        model_id = args.model_id if args.model_id else "{}_{}_{}".format(
-            timestamp, args.dataset, args.architecture)
-        model_dir = os.path.join(OUTPUT_DIR, model_id)
-        save_makedirs(model_dir)
-
     if args.debug:
-        dataset = datasets["test"]
-        args.dataset = "test"
+        dataset = datasets["debug"]
+        args.dataset = "debug"
         features, _, labels, _ = preprocess_data(
             args.tile_size, dataset=dataset)
         features_train, features_test = features[:100], features[100:120]
@@ -127,6 +120,12 @@ def main():
             out_dir = os.path.join(TRAIN_DATA_DIR, "labels_images")
             visualise_features(labels_train, args.tile_size, out_dir)
             visualise_features(labels_test, args.tile_size, out_dir)
+
+    if not args.model_id:
+        timestamp = time.strftime("%d_%m_%Y_%H%M")
+        model_id = "{}_{}_{}".format(timestamp, args.dataset, args.architecture)
+        model_dir = os.path.join(OUTPUT_DIR, model_id)
+        save_makedirs(model_dir)
 
     if args.init_model:
         hyperparameters = [

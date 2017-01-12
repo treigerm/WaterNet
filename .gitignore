@@ -1,4 +1,5 @@
-# Ignore IPython notebook metadata
+# Ignore IPython notebook 
 .ipynb_checkpoints
+*.ipynb
 
 *.pyc
