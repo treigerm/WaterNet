@@ -35,10 +35,8 @@ DeepWater/
         water_bitmaps/
       models/
         {model_id}/
-          checkpoints/
     output/
       {model_id}/
-      logs/
       tensorboard/
 
 File names:
@@ -48,5 +46,4 @@ File names:
 - Tiled satellite image and bitmap: {satellite_img_name}_{tile_size}_tiles.pickle
     - Store as {"features": features, "labels": labels}
 - GeoTIFF with overlayed predictions: {satellite_img_name}_{model_id}.tif
-- Log file: logfile.log
-- Model-ID: {timestamp}_{dataset}
+- Model-ID: {timestamp}_{dataset}_{architecture}

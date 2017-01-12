@@ -137,8 +137,8 @@ def evaluate_model(model, features, labels, tile_size, out_path):
 
     visualise_predictions(predicted_bitmap, labels, tile_size, out_path)
 
-    print("Accuracy on test set: {}".format(metrics.accuracy_score(y_true, predicted_bitmap)))
-    precision_recall_curve(y_true, y_predicted, out_path)
+    print("Accuracy on test set: {}".format(metrics.accuracy_score(y_true.flatten(), predicted_bitmap.flatten())))
+    precision_recall_curve(y_true.flatten(), y_predicted.flatten(), out_path)
 
 
 def visualise_predictions(predictions, labels, tile_size, out_path):
@@ -155,8 +155,6 @@ def visualise_predictions(predictions, labels, tile_size, out_path):
 
 def precision_recall_curve(y_true, y_predicted, out_path):
     print("Calculate precision recall curve.")
-    y_true = np.reshape(y_true, (y_true.shape[0] * y_true.shape[1]))
-    y_predicted = np.reshape(y_predicted, y_true.shape)
     precision, recall, thresholds = metrics.precision_recall_curve(y_true,
                                                                    y_predicted)
     out_file = os.path.join(out_path, "precision_recall.pickle")
