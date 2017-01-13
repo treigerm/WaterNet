@@ -1,0 +1,8 @@
+Fiona==1.7.1.post1
+Keras==1.2.0
+matplotlib==1.5.3
+numpy==1.11.3
+rasterio==1.0a5
+scikit_learn==0.18.1
+tensorflow>=0.9.0
+h5py=2.6.0

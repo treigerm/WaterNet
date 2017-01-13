@@ -24,7 +24,7 @@ def get_file_name(file_path):
 def save_model_summary(hyperparameters, model, path):
     with open(os.path.join(path, "hyperparameters.txt"), "wb") as out:
         for parameter, value in hyperparameters:
-            out.write("\n{}: {}".format(parameter, value))
+            out.write("{}: {}\n".format(parameter, value))
         stdout = sys.stdout
         sys.stdout = out
         model.summary()

@@ -1,7 +1,7 @@
+import os
 from os.path import join
 
-# TODO: Get from environment variable.
-DATA_DIR = "/Users/Tim/dev/python/DeepWater/data/"
+DATA_DIR = os.environ["DATA_DIR"]
 TRAIN_DATA_DIR = join(DATA_DIR, "working", "train_data")
 SENTINEL_DIR = join(DATA_DIR, "input", "Sentinel-2")
 SHAPEFILE_DIR = join(DATA_DIR, "input", "Shapefiles")

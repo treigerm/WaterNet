@@ -5,16 +5,11 @@ from keras.layers import Dense, Activation, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.callbacks import ModelCheckpoint, TensorBoard
-import pickle
 import os
 import numpy as np
-from sklearn import metrics
-import matplotlib.pyplot as plt
-from process_geotiff import visualise_features
 from config import MODELS_DIR
 from config import TENSORBOARD_DIR
 from io_util import save_makedirs, save_model
-plt.style.use('ggplot')
 
 
 def normalize_input(features):
