@@ -3,3 +3,6 @@
 *.ipynb
 
 *.pyc
+
+# Ignore the TODO file
+TODO.txt
