@@ -1,5 +1,4 @@
 import fiona
-import itertools
 import pickle
 import rasterio
 import rasterio.features
@@ -7,15 +6,15 @@ import rasterio.warp
 import os
 from config import TILES_DIR
 from config import WATER_BITMAPS_DIR
-from config import WGS84_DIR
-from process_geotiff import read_geotiff, read_bands, create_tiles, image_from_tiles, overlay_bitmap, reproject_dataset, visualise_features
+from process_geotiff import create_tiles
+from process_geotiff import read_bands
+from process_geotiff import read_geotiff
+from process_geotiff import reproject_dataset
 from io_util import get_file_name, save_tiles, save_tiles, save_image
 import numpy as np
 
 
 def preprocess_data(tile_size, dataset, only_cache=False):
-    # TODO: Add only_cache option.
-
     print('_' * 100)
     print("Start preprocessing data.")
 
@@ -59,7 +58,7 @@ def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size, o
         print("Cache not available. Compute tiles.")
 
     # TODO: Comments
-    dataset = reproject_dataset(geotiff_path)
+    dataset, wgs84_path = reproject_dataset(geotiff_path)
     bands = read_bands(dataset)
 
     # For the given satellite image create a bitmap which has 1 at every pixel which corresponds
@@ -68,8 +67,8 @@ def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size, o
     water_bitmap = create_bitmap(dataset, shapefile_paths, geotiff_path)
 
     # Tile the RGB bands of the satellite image and the bitmap.
-    tiled_bands = create_tiles(bands, tile_size, geotiff_path)
-    tiled_bitmap = create_tiles(water_bitmap, tile_size, geotiff_path)
+    tiled_bands = create_tiles(bands, tile_size, wgs84_path)
+    tiled_bitmap = create_tiles(water_bitmap, tile_size, wgs84_path)
 
     tiled_bands, tiled_bitmap = remove_edge_tiles(tiled_bands, tiled_bitmap, tile_size, dataset.shape)
 
@@ -103,8 +102,6 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
     try:
         print("Load water bitmap from {}".format(cache_path))
         _, image = read_geotiff(cache_path)
-        # TODO: Don't resize image but change create_tiles.
-        image = np.reshape(image, (image.shape[0], image.shape[1], 1))
         image[image == 255] = 1
         return image
     except IOError as e:
@@ -132,8 +129,6 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
 
     save_image(cache_path, bitmap_image, raster_dataset)
 
-    # TODO: Don't resize image but change create_tiles.
-    bitmap_image = np.reshape(bitmap_image, (bitmap_image.shape[0], bitmap_image.shape[1], 1))
     bitmap_image[bitmap_image == 255] = 1
     return bitmap_image
 

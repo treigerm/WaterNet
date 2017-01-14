@@ -53,12 +53,11 @@ def reproject_dataset(geotiff_path):
                     dst_crs=dst_crs,
                     resampling=rasterio.warp.Resampling.nearest)
 
-        return rasterio.open(out_path)
+        return rasterio.open(out_path), out_path
 
 
 def create_tiles(bands_data, tile_size, path_to_geotiff):
     """From https://github.com/trailbehind/DeepOSM."""
-    # TODO: Select bands.
 
     rows, cols, n_bands = bands_data.shape
 
@@ -70,8 +69,7 @@ def create_tiles(bands_data, tile_size, path_to_geotiff):
     for (row, col) in tile_indexes:
         in_bounds = row + tile_size < rows and col + tile_size < cols
         if in_bounds:
-            new_tile = bands_data[row:row + tile_size, col:col + tile_size,
-                                  0:n_bands]
+            new_tile = bands_data[row:row + tile_size, col:col + tile_size]
             all_tiled_data.append((new_tile, (row, col), path_to_geotiff))
 
     return all_tiled_data
@@ -81,7 +79,8 @@ def image_from_tiles(tiles, tile_size, image_shape):
     image = np.zeros(image_shape, dtype=np.uint8)
 
     for tile, (row, col), _ in tiles:
-        image[row:row + tile_size, col:col + tile_size, :] = tile
+        tile = np.reshape(tile, (tile_size, tile_size))
+        image[row:row + tile_size, col:col + tile_size] = tile
 
     return image
 
@@ -98,7 +97,6 @@ def overlay_bitmap(bitmap, raster_dataset, out_path, color='blue'):
     blue[bitmap == 1] = colors[color][2]
     profile = raster_dataset.profile
     dst = rasterio.open(out_path, 'w', **profile)
-    #with rasterio.open(out_path, 'w', **profile) as dst:
     dst.write(red, 1)
     dst.write(green, 2)
     dst.write(blue, 3)
@@ -110,14 +108,11 @@ def visualise_features(features, tile_size, out_path):
     get_path = lambda x: x[2]
     sorted_by_path = sorted(features, key=get_path)
     for path, predictions in itertools.groupby(sorted_by_path, get_path):
-        satellite_img_name = get_file_name(path)
-        satellite_file_name = "{}_wgs84.tif".format(satellite_img_name)
-        path_wgs84 = os.path.join(WGS84_DIR, satellite_file_name)
-        raster_dataset = rasterio.open(path_wgs84)
-        # TODO: Don' reshape bitmap.
-        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
+        raster_dataset = rasterio.open(path)
+        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1])
         bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
-        bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
+
+        satellite_img_name = get_file_name(path)
         out_file_name = "{}.tif".format(satellite_img_name)
         out = os.path.join(out_path, out_file_name)
         overlay_bitmap(bitmap, raster_dataset, out)
@@ -129,20 +124,19 @@ def visualise_results(results, tile_size, out_path):
     get_false_positives = lambda x: (x[0][2], x[1], x[2])
     sorted_by_path = sorted(results, key=get_path)
     for path, result_tiles in itertools.groupby(sorted_by_path, get_path):
-        satellite_img_name = get_file_name(path)
-        satellite_file_name = "{}_wgs84.tif".format(satellite_img_name)
-        path_wgs84 = os.path.join(WGS84_DIR, satellite_file_name)
-        raster_dataset = rasterio.open(path_wgs84)
-        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
+        raster_dataset = rasterio.open(path)
+        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1])
+
         result_tiles = list(result_tiles)
         predictions = map(get_predictions, result_tiles)
         labels = map(get_labels, result_tiles)
         false_positives = map(get_false_positives, result_tiles)
-        out_file_name = "{}.tif".format(satellite_img_name)
+
+        satellite_img_name = get_file_name(path)
+        out_file_name = "{}_results.tif".format(satellite_img_name)
         out = os.path.join(out_path, out_file_name)
         for tiles, color in [(labels, 'blue'), (predictions, 'green'), (false_positives, 'red')]:
             bitmap = image_from_tiles(tiles, tile_size, bitmap_shape)
-            bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
             raster_dataset = overlay_bitmap(bitmap, raster_dataset, out, color=color)
 
 
