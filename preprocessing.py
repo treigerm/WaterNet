@@ -6,10 +6,10 @@ import rasterio.warp
 import os
 from config import TILES_DIR
 from config import WATER_BITMAPS_DIR
-from process_geotiff import create_tiles
-from process_geotiff import read_bands
-from process_geotiff import read_geotiff
-from process_geotiff import reproject_dataset
+from geo_util import create_tiles
+from geo_util import read_bands
+from geo_util import read_geotiff
+from geo_util import reproject_dataset
 from io_util import get_file_name, save_tiles, save_tiles, save_image
 import numpy as np
 
@@ -40,11 +40,13 @@ def extract_features_and_labels(dataset, tile_size, only_cache=False):
     return features, labels
 
 
-def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size, only_cache=False):
+def create_tiled_features_and_labels(geotiff_path,
+                                     shapefile_paths,
+                                     tile_size,
+                                     only_cache=False):
     # Try to load tiles from cache.
     satellite_img_name = get_file_name(geotiff_path)
-    cache_file_name = "{}_{}.pickle".format(
-        satellite_img_name, tile_size)
+    cache_file_name = "{}_{}.pickle".format(satellite_img_name, tile_size)
     cache_path = os.path.join(TILES_DIR, cache_file_name)
     try:
         print("Load tiles from {}.".format(cache_path))
@@ -70,11 +72,13 @@ def create_tiled_features_and_labels(geotiff_path, shapefile_paths, tile_size, o
     tiled_bands = create_tiles(bands, tile_size, wgs84_path)
     tiled_bitmap = create_tiles(water_bitmap, tile_size, wgs84_path)
 
-    tiled_bands, tiled_bitmap = remove_edge_tiles(tiled_bands, tiled_bitmap, tile_size, dataset.shape)
+    tiled_bands, tiled_bitmap = remove_edge_tiles(tiled_bands, tiled_bitmap,
+                                                  tile_size, dataset.shape)
 
     save_tiles(cache_path, tiled_bands, tiled_bitmap)
 
     return tiled_bands, tiled_bitmap
+
 
 def remove_edge_tiles(tiled_bands, tiled_bitmap, tile_size, source_shape):
     EDGE_BUFFER = 350
@@ -83,9 +87,11 @@ def remove_edge_tiles(tiled_bands, tiled_bitmap, tile_size, source_shape):
     bands = []
     bitmap = []
     for i, (tile, (row, col), _) in enumerate(tiled_bands):
-        is_in_center = EDGE_BUFFER <= row and row <= (rows - EDGE_BUFFER) and EDGE_BUFFER <= col and col <= (cols - EDGE_BUFFER)
-        # Checks wether our tile contains a pixel which is only black. 
-        contains_black_pixel = [0,0,0] in tile
+        is_in_center = EDGE_BUFFER <= row and row <= (
+            rows - EDGE_BUFFER) and EDGE_BUFFER <= col and col <= (
+                cols - EDGE_BUFFER)
+        # Checks wether our tile contains a pixel which is only black.
+        contains_black_pixel = [0, 0, 0] in tile
         is_edge_tile = contains_black_pixel and not is_in_center
         if not is_edge_tile:
             bands.append(tiled_bands[i])
@@ -96,8 +102,7 @@ def remove_edge_tiles(tiled_bands, tiled_bitmap, tile_size, source_shape):
 
 def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
     satellite_img_name = get_file_name(satellite_path)
-    cache_file_name = "{}_water.tif".format(
-        satellite_img_name)
+    cache_file_name = "{}_water.tif".format(satellite_img_name)
     cache_path = os.path.join(WATER_BITMAPS_DIR, cache_file_name)
     try:
         print("Load water bitmap from {}".format(cache_path))
@@ -107,7 +112,7 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
     except IOError as e:
         print("No cache file found.")
 
-    water_features = np.empty((0,))
+    water_features = np.empty((0, ))
 
     print("Create bitmap for water features.")
     for shapefile_path in shapefile_paths:
@@ -118,17 +123,18 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
             # of the feature i.e. where it is located and what shape it has.
             geometries = [feature['geometry'] for feature in shapefile]
 
-            water_features = np.concatenate((water_features, geometries), axis=0)
+            water_features = np.concatenate(
+                (water_features, geometries), axis=0)
 
     # Now that we have the vector data of all water features in our satellite image
     # we "burn it" into a new raster so that we get a B/W image with water features
     # in white and the rest in black.
-    bitmap_image = rasterio.features.rasterize(((g, 255) for g in water_features),
-                                        out_shape=raster_dataset.shape,
-                                        transform=raster_dataset.transform)
+    bitmap_image = rasterio.features.rasterize(
+        ((g, 255) for g in water_features),
+        out_shape=raster_dataset.shape,
+        transform=raster_dataset.transform)
 
     save_image(cache_path, bitmap_image, raster_dataset)
 
     bitmap_image[bitmap_image == 255] = 1
     return bitmap_image
-

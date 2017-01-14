@@ -6,7 +6,7 @@ import os
 import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
-from process_geotiff import visualise_features, visualise_results
+from geo_util import visualise_features, visualise_results
 from model import get_matrix_form
 plt.style.use('ggplot')
 

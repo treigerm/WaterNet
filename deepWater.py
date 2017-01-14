@@ -9,7 +9,7 @@ from preprocessing import preprocess_data
 from model import init_model, train_model
 from evaluation import evaluate_model
 from io_util import save_makedirs, save_model_summary, load_model
-from process_geotiff import visualise_features
+from geo_util import visualise_features
 
 datasets = {"sentinel": SENTINEL_DATASET, "debug": DEBUG_DATASET}
 

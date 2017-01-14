@@ -96,11 +96,11 @@ def overlay_bitmap(bitmap, raster_dataset, out_path, color='blue'):
     green[bitmap == 1] = colors[color][1]
     blue[bitmap == 1] = colors[color][2]
     profile = raster_dataset.profile
-    dst = rasterio.open(out_path, 'w', **profile)
-    dst.write(red, 1)
-    dst.write(green, 2)
-    dst.write(blue, 3)
-    dst.close()
+    with rasterio.open(out_path, 'w', **profile) as dst:
+        dst.write(red, 1)
+        dst.write(green, 2)
+        dst.write(blue, 3)
+
     return rasterio.open(out_path)
 
 
