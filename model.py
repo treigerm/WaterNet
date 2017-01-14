@@ -29,6 +29,7 @@ def train_model(model,
     X, y = get_matrix_form(features, labels, tile_size)
     X = normalize_input(X)
 
+    # Directory which is used to store the model and its weights.
     model_dir = os.path.join(MODELS_DIR, model_id)
 
     checkpointer = None
@@ -110,7 +111,8 @@ def init_model(tile_size,
         optimizer=momentum,
         metrics=['accuracy'])
 
-    print(model.summary())
+    # Print a summary of the model to the console.
+    model.summary()
 
     model_dir = os.path.join(MODELS_DIR, model_id)
     save_makedirs(model_dir)

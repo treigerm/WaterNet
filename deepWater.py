@@ -16,6 +16,7 @@ datasets = {"sentinel": SENTINEL_DATASET, "debug": DEBUG_DATASET}
 
 def create_parser():
     parser = argparse.ArgumentParser(description="Process satellite images.")
+
     parser.add_argument(
         "-p, --preprocess-data",
         dest="preprocess_data",
@@ -91,7 +92,7 @@ def create_parser():
         "--model-id",
         default=None,
         type=str,
-        help="Model that should be used.")
+        help="Model that should be used. Must be an already existing ID.")
 
     return parser
 
@@ -131,15 +132,25 @@ def main():
     save_makedirs(model_dir)
 
     if args.init_model:
+        # Hyperparameters for the model. Since there are so many of them it is
+        # more convenient to set them in the source code as opposed to passing
+        # them as arguments to the CLI. We use a list of tuples instead of a
+        # dict since we want to print the hyperparameters and for that purpose
+        # keep them in the predefined order.
         hyperparameters = [
             ("architecture", args.architecture),
+            # Hyperparameters for the first convolutional layer.
             ("nb_filters_1", 64),
             ("filter_size_1", 12),
             ("stride_1", (4, 4)),
+            # Hyperparameter for the first pooling layer.
             ("pool_size_1", (3, 3)),
+            # Hyperparameters for the second convolutional layer (when two layer
+            # architecture is used).
             ("nb_filters_2", 128),
             ("filter_size_2", 4),
             ("stride_2", (1, 1)),
+            # Hyperparameters for Stochastic Gradient Descent.
             ("learning_rate", 0.005),
             ("momentum", 0.9),
             ("decay", 0.002)

@@ -59,8 +59,11 @@ def create_tiled_features_and_labels(geotiff_path,
             raise
         print("Cache not available. Compute tiles.")
 
-    # TODO: Comments
+    # The provided satellite images have a different coordinate reference system as
+    # the familiar WGS 84 which uses Latitude and Longitude. So we need to reproject
+    # the satellite image to the WGS 84 coordinate reference system.
     dataset, wgs84_path = reproject_dataset(geotiff_path)
+    # TODO: Check if we need that.
     bands = read_bands(dataset)
 
     # For the given satellite image create a bitmap which has 1 at every pixel which corresponds
@@ -72,6 +75,10 @@ def create_tiled_features_and_labels(geotiff_path,
     tiled_bands = create_tiles(bands, tile_size, wgs84_path)
     tiled_bitmap = create_tiles(water_bitmap, tile_size, wgs84_path)
 
+    # Due to the projection the satellite image in the GeoTIFF is not a perfect square and the
+    # remaining space on the edges is blacked out. When we overlay the GeoTIFF with the
+    # shapefile it also overlays features for the blacked out parts which means that if we don't
+    # remove these tiles  TODO: phrase it better.
     tiled_bands, tiled_bitmap = remove_edge_tiles(tiled_bands, tiled_bitmap,
                                                   tile_size, dataset.shape)
 
@@ -82,6 +89,7 @@ def create_tiled_features_and_labels(geotiff_path,
 
 def remove_edge_tiles(tiled_bands, tiled_bitmap, tile_size, source_shape):
     EDGE_BUFFER = 350
+
     rows, cols = source_shape[0], source_shape[1]
 
     bands = []
@@ -105,6 +113,7 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
     cache_file_name = "{}_water.tif".format(satellite_img_name)
     cache_path = os.path.join(WATER_BITMAPS_DIR, cache_file_name)
     try:
+        # Try loading the water bitmap from cache.
         print("Load water bitmap from {}".format(cache_path))
         _, image = read_geotiff(cache_path)
         image[image == 255] = 1

@@ -17,6 +17,8 @@ def read_geotiff(file_name):
 
 
 def read_bands(raster_dataset):
+    """TODO: Docstring."""
+    # TODO: Simplify.
     bands = [
         raster_dataset.read(band_number)
         for band_number in raster_dataset.indexes
@@ -26,6 +28,12 @@ def read_bands(raster_dataset):
 
 
 def reproject_dataset(geotiff_path):
+    """TODO: Add docstring.
+    TODO: Add link to rasterio docs."""
+
+    # We want to project the GeoTIFF coordinate reference system (crs)
+    # to WGS84 (e.g. into the familiar Lat/Lon pairs). WGS84 is analogous
+    # to EPSG:4326
     dst_crs = 'EPSG:4326'
 
     with rasterio.open(geotiff_path) as src:
@@ -105,7 +113,7 @@ def overlay_bitmap(bitmap, raster_dataset, out_path, color='blue'):
 
 
 def visualise_features(features, tile_size, out_path):
-    get_path = lambda x: x[2]
+    get_path = lambda (_, _, path): path
     sorted_by_path = sorted(features, key=get_path)
     for path, predictions in itertools.groupby(sorted_by_path, get_path):
         raster_dataset = rasterio.open(path)
@@ -118,10 +126,11 @@ def visualise_features(features, tile_size, out_path):
         overlay_bitmap(bitmap, raster_dataset, out)
 
 def visualise_results(results, tile_size, out_path):
-    get_path = lambda x: x[2]
-    get_predictions = lambda x: (x[0][0], x[1], x[2])
-    get_labels = lambda x: (x[0][1], x[1], x[2])
-    get_false_positives = lambda x: (x[0][2], x[1], x[2])
+    get_predictions = lambda (tiles, pos, path): (tiles[0], pos, path)
+    get_labels = lambda (tiles, pos, path): (tiles[1], pos, path)
+    get_false_positives =  lambda (tiles, pos, path): (tiles[2], pos, path)
+
+    get_path = lambda (_, _, path): path
     sorted_by_path = sorted(results, key=get_path)
     for path, result_tiles in itertools.groupby(sorted_by_path, get_path):
         raster_dataset = rasterio.open(path)
@@ -139,4 +148,15 @@ def visualise_results(results, tile_size, out_path):
             bitmap = image_from_tiles(tiles, tile_size, bitmap_shape)
             raster_dataset = overlay_bitmap(bitmap, raster_dataset, out, color=color)
 
+def visualise(feautures, tile_size, out_path, colors=['blue']):
+    get_path = lambda (_, _, path): path
+    sorted_by_path = sorted(features, key=get_path)
+    for path, tile_data in itertools.groupby(sorted_by_path, get_path):
+        raster_dataset = rasterio.open(path)
+        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1])
 
+        get_tiles = lambda (tiles, _, _): tiles
+        tiles = map(get_tiles, tile_data)
+        tiles_colors = zip(zip(*tiles), colors)
+
+        # TODO: do the loop from 147.
