@@ -2,27 +2,23 @@ import os
 from os.path import join
 
 DATA_DIR = os.environ["DATA_DIR"]
-TRAIN_DATA_DIR = join(DATA_DIR, "working", "train_data")
 SENTINEL_DIR = join(DATA_DIR, "input", "Sentinel-2")
 SHAPEFILE_DIR = join(DATA_DIR, "input", "Shapefiles")
+TRAIN_DATA_DIR = join(DATA_DIR, "working", "train_data")
 
 TILES_DIR = join(TRAIN_DATA_DIR, "tiles")
 WATER_BITMAPS_DIR = join(TRAIN_DATA_DIR, "water_bitmaps")
 WGS84_DIR = join(TRAIN_DATA_DIR, "WGS84_images")
 
-WATER_POLYGONS_DIR = join(DATA_DIR, "working", "water_polygons")
 MODELS_DIR = join(DATA_DIR, "working", "models")
 
-SHAPEFILE_CHECKPOINTS_DIR = join(WATER_POLYGONS_DIR, "checkpoints")
-
 OUTPUT_DIR = join(DATA_DIR, "output")
-LOGS_DIR = join(OUTPUT_DIR, "logs")
 TENSORBOARD_DIR = join(OUTPUT_DIR, "tensorboard")
 
-MUENSTER_SHAPEFILE = join(DATA_DIR, "input", "Shapefiles", "muenster-regbez-latest-free", "gis.osm_water_a_free_1.shp")
-NETHERLANDS_SHAPEFILE = join(DATA_DIR, "input", "Shapefiles", "netherlands-latest-free", "gis.osm_water_nl_free_1.shp")
-NRW_SHAPEFILE = join(DATA_DIR, "input", "Shapefiles", "nordrhein-westfalen-latest-free", "gis.osm_water_nrw_free_1.shp")
-OCEAN_SHAPEFILE = join(DATA_DIR, "input", "Shapefiles", "water-polygons-split-4326", "ocean_polygons.shp")
+MUENSTER_SHAPEFILE = join(SHAPEFILE_DIR, "muenster-regbez-latest-free", "gis.osm_water_a_free_1.shp")
+NETHERLANDS_SHAPEFILE = join(SHAPEFILE_DIR, "netherlands-latest-free", "gis.osm_water_nl_free_1.shp")
+NRW_SHAPEFILE = join(SHAPEFILE_DIR, "nordrhein-westfalen-latest-free", "gis.osm_water_nrw_free_1.shp")
+OCEAN_SHAPEFILE = join(SHAPEFILE_DIR, "water-polygons-split-4326", "ocean_polygons.shp")
 SWITZERLAND_SHAPEFILE = join(SHAPEFILE_DIR, "switzerland-latest-free", "gis.osm_water_a_free_1.shp")
 BAYERN_SHAPEFILE = join(SHAPEFILE_DIR, "bayern-latest-free", "gis.osm_water_a_free_1.shp")
 FRANCHE_COMTE_SHAPEFILE = join(SHAPEFILE_DIR, "franche-comte-latest-free", "gis.osm_water_a_free_1.shp")

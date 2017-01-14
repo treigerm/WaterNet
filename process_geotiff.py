@@ -86,17 +86,24 @@ def image_from_tiles(tiles, tile_size, image_shape):
     return image
 
 
-def overlay_bitmap(bitmap, raster_dataset, out_path):
-    # TODO: Choose color.
+def overlay_bitmap(bitmap, raster_dataset, out_path, color='blue'):
+    colors = {
+        "red": (255, 0, 0),
+        "green": (0, 255, 0),
+        "blue": (0, 0, 255)
+    }
     red, green, blue = raster_dataset.read()
-    red[bitmap == 1] = 0
-    green[bitmap == 1] = 0
-    blue[bitmap == 1] = 255
+    red[bitmap == 1] = colors[color][0]
+    green[bitmap == 1] = colors[color][1]
+    blue[bitmap == 1] = colors[color][2]
     profile = raster_dataset.profile
-    with rasterio.open(out_path, 'w', **profile) as dst:
-        dst.write(red, 1)
-        dst.write(green, 2)
-        dst.write(blue, 3)
+    dst = rasterio.open(out_path, 'w', **profile)
+    #with rasterio.open(out_path, 'w', **profile) as dst:
+    dst.write(red, 1)
+    dst.write(green, 2)
+    dst.write(blue, 3)
+    dst.close()
+    return rasterio.open(out_path)
 
 
 def visualise_features(features, tile_size, out_path):
@@ -107,9 +114,35 @@ def visualise_features(features, tile_size, out_path):
         satellite_file_name = "{}_wgs84.tif".format(satellite_img_name)
         path_wgs84 = os.path.join(WGS84_DIR, satellite_file_name)
         raster_dataset = rasterio.open(path_wgs84)
+        # TODO: Don' reshape bitmap.
         bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
         bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
         bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
         out_file_name = "{}.tif".format(satellite_img_name)
         out = os.path.join(out_path, out_file_name)
         overlay_bitmap(bitmap, raster_dataset, out)
+
+def visualise_results(results, tile_size, out_path):
+    get_path = lambda x: x[2]
+    get_predictions = lambda x: (x[0][0], x[1], x[2])
+    get_labels = lambda x: (x[0][1], x[1], x[2])
+    get_false_positives = lambda x: (x[0][2], x[1], x[2])
+    sorted_by_path = sorted(results, key=get_path)
+    for path, result_tiles in itertools.groupby(sorted_by_path, get_path):
+        satellite_img_name = get_file_name(path)
+        satellite_file_name = "{}_wgs84.tif".format(satellite_img_name)
+        path_wgs84 = os.path.join(WGS84_DIR, satellite_file_name)
+        raster_dataset = rasterio.open(path_wgs84)
+        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1], 1)
+        result_tiles = list(result_tiles)
+        predictions = map(get_predictions, result_tiles)
+        labels = map(get_labels, result_tiles)
+        false_positives = map(get_false_positives, result_tiles)
+        out_file_name = "{}.tif".format(satellite_img_name)
+        out = os.path.join(out_path, out_file_name)
+        for tiles, color in [(labels, 'blue'), (predictions, 'green'), (false_positives, 'red')]:
+            bitmap = image_from_tiles(tiles, tile_size, bitmap_shape)
+            bitmap = np.reshape(bitmap, (bitmap.shape[0], bitmap.shape[1]))
+            raster_dataset = overlay_bitmap(bitmap, raster_dataset, out, color=color)
+
+

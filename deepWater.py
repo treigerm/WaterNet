@@ -107,7 +107,7 @@ def main():
             args.tile_size, dataset=dataset)
         features_train, features_test = features[:100], features[100:120]
         labels_train, labels_test = labels[:100], labels[100:120]
-    elif args.train_model or args.evaluate_model:
+    elif args.train_model or args.evaluate_model or args.preprocess_data:
         dataset = datasets[args.dataset]
         load_from_cache = not args.preprocess_data
         try:
@@ -124,8 +124,11 @@ def main():
     if not args.model_id:
         timestamp = time.strftime("%d_%m_%Y_%H%M")
         model_id = "{}_{}_{}".format(timestamp, args.dataset, args.architecture)
-        model_dir = os.path.join(OUTPUT_DIR, model_id)
-        save_makedirs(model_dir)
+    else:
+        model_id = args.model_id
+
+    model_dir = os.path.join(OUTPUT_DIR, model_id)
+    save_makedirs(model_dir)
 
     if args.init_model:
         hyperparameters = [
@@ -143,7 +146,7 @@ def main():
         ]
         model = init_model(args.tile_size, model_id, **dict(hyperparameters))
         save_model_summary(hyperparameters, model, model_dir)
-    else:
+    elif args.train_model or args.evaluate_model:
         model = load_model(model_id)
 
     if args.train_model:
