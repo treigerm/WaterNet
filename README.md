@@ -2,6 +2,8 @@
 
 Using publicly available satellite imagery and OSM data we train a convolutional neural net to predict water occurrences in satellite images.
 
+![Example output](/../images/imgs/budapest.jpg)
+
 ## Installation
 
 For running the program yourself you will need Docker, some actual satellite imagery and corresponding shapefiles to create the labels.
