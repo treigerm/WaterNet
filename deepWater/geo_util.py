@@ -113,7 +113,7 @@ def overlay_bitmap(bitmap, raster_dataset, out_path, color='blue'):
 
 
 def visualise_features(features, tile_size, out_path):
-    get_path = lambda (_, _, path): path
+    get_path = lambda (tiles, features, path): path
     sorted_by_path = sorted(features, key=get_path)
     for path, predictions in itertools.groupby(sorted_by_path, get_path):
         raster_dataset = rasterio.open(path)
@@ -130,7 +130,7 @@ def visualise_results(results, tile_size, out_path):
     get_labels = lambda (tiles, pos, path): (tiles[1], pos, path)
     get_false_positives =  lambda (tiles, pos, path): (tiles[2], pos, path)
 
-    get_path = lambda (_, _, path): path
+    get_path = lambda (tiles,pos , path): path
     sorted_by_path = sorted(results, key=get_path)
     for path, result_tiles in itertools.groupby(sorted_by_path, get_path):
         raster_dataset = rasterio.open(path)
@@ -149,13 +149,13 @@ def visualise_results(results, tile_size, out_path):
             raster_dataset = overlay_bitmap(bitmap, raster_dataset, out, color=color)
 
 def visualise(feautures, tile_size, out_path, colors=['blue']):
-    get_path = lambda (_, _, path): path
+    get_path = lambda (tiles, pos, path): path
     sorted_by_path = sorted(features, key=get_path)
     for path, tile_data in itertools.groupby(sorted_by_path, get_path):
         raster_dataset = rasterio.open(path)
         bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1])
 
-        get_tiles = lambda (tiles, _, _): tiles
+        get_tiles = lambda (tiles, pos, path): tiles
         tiles = map(get_tiles, tile_data)
         tiles_colors = zip(zip(*tiles), colors)
 

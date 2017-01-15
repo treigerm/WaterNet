@@ -4,12 +4,12 @@ import argparse
 import time
 import os
 import sys
-from config import SENTINEL_DATASET, DEBUG_DATASET, OUTPUT_DIR, TRAIN_DATA_DIR
-from preprocessing import preprocess_data
-from model import init_model, train_model
-from evaluation import evaluate_model
-from io_util import save_makedirs, save_model_summary, load_model
-from geo_util import visualise_features
+from deepWater.config import SENTINEL_DATASET, DEBUG_DATASET, OUTPUT_DIR, TRAIN_DATA_DIR
+from deepWater.preprocessing import preprocess_data
+from deepWater.model import init_model, train_model
+from deepWater.evaluation import evaluate_model
+from deepWater.io_util import save_makedirs, save_model_summary, load_model
+from deepWater.geo_util import visualise_features
 
 datasets = {"sentinel": SENTINEL_DATASET, "debug": DEBUG_DATASET}
 
