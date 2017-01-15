@@ -7,7 +7,6 @@ import os
 from config import TILES_DIR
 from config import WATER_BITMAPS_DIR
 from geo_util import create_tiles
-from geo_util import read_bands
 from geo_util import read_geotiff
 from geo_util import reproject_dataset
 from io_util import get_file_name, save_tiles, save_tiles, save_image
@@ -63,8 +62,9 @@ def create_tiled_features_and_labels(geotiff_path,
     # the familiar WGS 84 which uses Latitude and Longitude. So we need to reproject
     # the satellite image to the WGS 84 coordinate reference system.
     dataset, wgs84_path = reproject_dataset(geotiff_path)
-    # TODO: Check if we need that.
-    bands = read_bands(dataset)
+
+    # TODO: Comments.
+    bands = np.dstack(dataset.read())
 
     # For the given satellite image create a bitmap which has 1 at every pixel which corresponds
     # to water in the satellite image. In order to do this we use water polygons from OpenStreetMap.

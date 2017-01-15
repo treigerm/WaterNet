@@ -116,6 +116,7 @@ def main():
                 args.tile_size, dataset=dataset, only_cache=load_from_cache)
         except IOError:
             print("Cache file does not exist. Please run again with -p flag.")
+            sys.exit(1)
 
         if args.visualise:
             out_dir = os.path.join(TRAIN_DATA_DIR, "labels_images")
@@ -128,8 +129,10 @@ def main():
     else:
         model_id = args.model_id
 
-    model_dir = os.path.join(OUTPUT_DIR, model_id)
-    save_makedirs(model_dir)
+    if args.init_model or args.train_model or args.evaluate_model:
+        model_dir = os.path.join(OUTPUT_DIR, model_id)
+        save_makedirs(model_dir)
+
 
     if args.init_model:
         # Hyperparameters for the model. Since there are so many of them it is

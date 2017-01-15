@@ -12,19 +12,8 @@ from config import WGS84_DIR
 def read_geotiff(file_name):
     """TODO: Docstring."""
     raster_dataset = rasterio.open(file_name)
-    bands = read_bands(raster_dataset)
+    bands = np.dstack(raster_dataset.read())
     return raster_dataset, bands
-
-
-def read_bands(raster_dataset):
-    """TODO: Docstring."""
-    # TODO: Simplify.
-    bands = [
-        raster_dataset.read(band_number)
-        for band_number in raster_dataset.indexes
-    ]
-    bands = np.dstack(bands)
-    return bands
 
 
 def reproject_dataset(geotiff_path):
@@ -67,7 +56,7 @@ def reproject_dataset(geotiff_path):
 def create_tiles(bands_data, tile_size, path_to_geotiff):
     """From https://github.com/trailbehind/DeepOSM."""
 
-    rows, cols, n_bands = bands_data.shape
+    rows, cols = bands_data.shape[0], bands_data.shape[1]
 
     all_tiled_data = []
 
