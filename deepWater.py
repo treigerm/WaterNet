@@ -4,11 +4,11 @@ import argparse
 import time
 import os
 import sys
-from deepWater.config import SENTINEL_DATASET, DEBUG_DATASET, OUTPUT_DIR, TRAIN_DATA_DIR
+from deepWater.config import SENTINEL_DATASET, DEBUG_DATASET, OUTPUT_DIR, TRAIN_DATA_DIR, LABELS_DIR
 from deepWater.preprocessing import preprocess_data
 from deepWater.model import init_model, train_model
 from deepWater.evaluation import evaluate_model
-from deepWater.io_util import save_makedirs, save_model_summary, load_model
+from deepWater.io_util import save_makedirs, save_model_summary, load_model, create_directories
 from deepWater.geo_util import visualise_features
 
 datasets = {"sentinel": SENTINEL_DATASET, "debug": DEBUG_DATASET}
@@ -93,6 +93,12 @@ def create_parser():
         default=None,
         type=str,
         help="Model that should be used. Must be an already existing ID.")
+    parser.add_argument(
+        "--setup",
+        default=False,
+        action="store_const",
+        const=True,
+        help="Create all necessary directories for the classifier to work.")
 
     return parser
 
@@ -100,6 +106,9 @@ def create_parser():
 def main():
     parser = create_parser()
     args = parser.parse_args()
+
+    if args.setup:
+        create_directories()
 
     if args.debug:
         dataset = datasets["debug"]
@@ -119,9 +128,8 @@ def main():
             sys.exit(1)
 
         if args.visualise:
-            out_dir = os.path.join(TRAIN_DATA_DIR, "labels_images")
-            visualise_features(labels_train, args.tile_size, out_dir)
-            visualise_features(labels_test, args.tile_size, out_dir)
+            visualise_features(labels_train, args.tile_size, LABELS_DIR)
+            visualise_features(labels_test, args.tile_size, LABELS_DIR)
 
     if not args.model_id:
         timestamp = time.strftime("%d_%m_%Y_%H%M")

@@ -9,6 +9,7 @@ TRAIN_DATA_DIR = join(DATA_DIR, "working", "train_data")
 TILES_DIR = join(TRAIN_DATA_DIR, "tiles")
 WATER_BITMAPS_DIR = join(TRAIN_DATA_DIR, "water_bitmaps")
 WGS84_DIR = join(TRAIN_DATA_DIR, "WGS84_images")
+LABELS_DIR = join(TRAIN_DATA_DIR, "labels_dir")
 
 MODELS_DIR = join(DATA_DIR, "working", "models")
 
@@ -52,3 +53,8 @@ DEBUG_DATASET = {
     "train": [(MUENSTER_SATELLITE, [MUENSTER_SHAPEFILE])],
     "test": []
 }
+
+def create_directories():
+    directories = [TILES_DIR, WATER_BITMAPS_DIR, WGS84_DIR, LABELS_DIR, MODELS_DIR,OUTPUT_DIR]
+    for directory in directories:
+        save_makedirs(directory)

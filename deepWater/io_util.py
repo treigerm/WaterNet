@@ -4,8 +4,12 @@ import sys
 import errno
 import pickle
 from keras.models import model_from_json
-from config import MODELS_DIR
+from config import TILES_DIR, WATER_BITMAPS_DIR, WGS84_DIR, LABELS_DIR, MODELS_DIR, OUTPUT_DIR, TENSORBOARD_DIR
 
+def create_directories():
+    directories = [TILES_DIR, WATER_BITMAPS_DIR, WGS84_DIR, LABELS_DIR, MODELS_DIR, OUTPUT_DIR, TENSORBOARD_DIR]
+    for directory in directories:
+        save_makedirs(directory)
 
 def save_makedirs(path):
     """Create a directory and don't throw an exception if the
