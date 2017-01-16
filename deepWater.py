@@ -4,18 +4,15 @@ import argparse
 import time
 import os
 import sys
-from deepWater.config import SENTINEL_DATASET, DEBUG_DATASET, OUTPUT_DIR, TRAIN_DATA_DIR, LABELS_DIR
+from deepWater.config import DATASETS, OUTPUT_DIR, TRAIN_DATA_DIR, LABELS_DIR
 from deepWater.preprocessing import preprocess_data
 from deepWater.model import init_model, train_model
 from deepWater.evaluation import evaluate_model
 from deepWater.io_util import save_makedirs, save_model_summary, load_model, create_directories
 from deepWater.geo_util import visualise_features
 
-datasets = {"sentinel": SENTINEL_DATASET, "debug": DEBUG_DATASET}
-
-
 def create_parser():
-    parser = argparse.ArgumentParser(description="Process satellite images.")
+    parser = argparse.ArgumentParser(description="Train a convolutional neural network to predict water in satellite images.")
 
     parser.add_argument(
         "-p, --preprocess-data",
@@ -128,8 +125,8 @@ def main():
             sys.exit(1)
 
         if args.visualise:
-            visualise_features(labels_train, args.tile_size, LABELS_DIR)
-            visualise_features(labels_test, args.tile_size, LABELS_DIR)
+            visualise_labels(labels_train, args.tile_size, LABELS_DIR)
+            visualise_labels(labels_test, args.tile_size, LABELS_DIR)
 
     if not args.model_id:
         timestamp = time.strftime("%d_%m_%Y_%H%M")
@@ -152,15 +149,15 @@ def main():
             ("architecture", args.architecture),
             # Hyperparameters for the first convolutional layer.
             ("nb_filters_1", 64),
-            ("filter_size_1", 12),
-            ("stride_1", (4, 4)),
+            ("filter_size_1", 7),
+            ("stride_1", (3, 3)),
             # Hyperparameter for the first pooling layer.
-            ("pool_size_1", (3, 3)),
+            ("pool_size_1", (4, 4)),
             # Hyperparameters for the second convolutional layer (when two layer
             # architecture is used).
             ("nb_filters_2", 128),
-            ("filter_size_2", 4),
-            ("stride_2", (1, 1)),
+            ("filter_size_2", 3),
+            ("stride_2", (2, 2)),
             # Hyperparameters for Stochastic Gradient Descent.
             ("learning_rate", 0.005),
             ("momentum", 0.9),
@@ -169,6 +166,7 @@ def main():
         model = init_model(args.tile_size, model_id, **dict(hyperparameters))
         save_model_summary(hyperparameters, model, model_dir)
     elif args.train_model or args.evaluate_model:
+        # FIXME: has to be compiled when trained.
         model = load_model(model_id)
 
     if args.train_model:

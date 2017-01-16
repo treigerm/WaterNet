@@ -1,4 +1,4 @@
-"""Module to handle processing the raw GeoTIFF data from satellite imagery."""
+"""Functions used to process the GeoTIFF satellite images."""
 
 import rasterio
 import rasterio.warp
@@ -9,16 +9,9 @@ from io_util import get_file_name
 from config import WGS84_DIR
 
 
-def read_geotiff(file_name):
-    """TODO: Docstring."""
-    raster_dataset = rasterio.open(file_name)
-    bands = np.dstack(raster_dataset.read())
-    return raster_dataset, bands
-
-
 def reproject_dataset(geotiff_path):
-    """TODO: Add docstring.
-    TODO: Add link to rasterio docs."""
+    """Project a GeoTIFF to the WGS84 coordinate reference system.
+    See https://mapbox.github.io/rasterio/topics/reproject.html"""
 
     # We want to project the GeoTIFF coordinate reference system (crs)
     # to WGS84 (e.g. into the familiar Lat/Lon pairs). WGS84 is analogous
@@ -54,12 +47,16 @@ def reproject_dataset(geotiff_path):
 
 
 def create_tiles(bands_data, tile_size, path_to_geotiff):
-    """From https://github.com/trailbehind/DeepOSM."""
+    """Tile the satellite image which is given as a matrix into tiles of
+    the given size.
+    From https://github.com/trailbehind/DeepOSM."""
 
     rows, cols = bands_data.shape[0], bands_data.shape[1]
 
     all_tiled_data = []
 
+    # Cartesian prodect of all the possible row and colum indexes. This
+    # gives all possible left-upper positions of our tiles.
     tile_indexes = itertools.product(
         range(0, rows, tile_size), range(0, cols, tile_size))
 
@@ -67,12 +64,17 @@ def create_tiles(bands_data, tile_size, path_to_geotiff):
         in_bounds = row + tile_size < rows and col + tile_size < cols
         if in_bounds:
             new_tile = bands_data[row:row + tile_size, col:col + tile_size]
+            # Additionaly to the tile we also store its position, given by
+            # its upper left corner, and the path to the GeoTIFF it belongs
+            # to. We need this information to visualise our results later on.
             all_tiled_data.append((new_tile, (row, col), path_to_geotiff))
 
     return all_tiled_data
 
 
 def image_from_tiles(tiles, tile_size, image_shape):
+    """'Stitch' several tiles back together to form one image."""
+
     image = np.zeros(image_shape, dtype=np.uint8)
 
     for tile, (row, col), _ in tiles:
@@ -83,15 +85,20 @@ def image_from_tiles(tiles, tile_size, image_shape):
 
 
 def overlay_bitmap(bitmap, raster_dataset, out_path, color='blue'):
+    """Overlay the given satellite image with a bitmap."""
+
+    # RGB values for possible color options.
     colors = {
         "red": (255, 0, 0),
         "green": (0, 255, 0),
         "blue": (0, 0, 255)
     }
+
     red, green, blue = raster_dataset.read()
     red[bitmap == 1] = colors[color][0]
     green[bitmap == 1] = colors[color][1]
     blue[bitmap == 1] = colors[color][2]
+
     profile = raster_dataset.profile
     with rasterio.open(out_path, 'w', **profile) as dst:
         dst.write(red, 1)
@@ -101,11 +108,17 @@ def overlay_bitmap(bitmap, raster_dataset, out_path, color='blue'):
     return rasterio.open(out_path)
 
 
-def visualise_features(features, tile_size, out_path):
-    get_path = lambda (tiles, features, path): path
-    sorted_by_path = sorted(features, key=get_path)
+def visualise_labels(labels, tile_size, out_path):
+    """Given the labels of a satellite image as tiles. Overlay the source image with the labels
+    to check if labels are roughly correct."""
+
+    # The tiles might come from different satellite images so we have to
+    # group them according to their source image.
+    get_path = lambda (tiles, pos, path): path
+    sorted_by_path = sorted(labels, key=get_path)
     for path, predictions in itertools.groupby(sorted_by_path, get_path):
         raster_dataset = rasterio.open(path)
+
         bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1])
         bitmap = image_from_tiles(predictions, tile_size, bitmap_shape)
 
@@ -115,6 +128,11 @@ def visualise_features(features, tile_size, out_path):
         overlay_bitmap(bitmap, raster_dataset, out)
 
 def visualise_results(results, tile_size, out_path):
+    """Given the predictions, false positves and the labels of our model visualise them on the satellite
+    image they belong to."""
+
+    # The tiles of the predictions, false positives and labels are all in "results".
+    # We need ways to get extract them individually to pass them to overlay_bitmap.
     get_predictions = lambda (tiles, pos, path): (tiles[0], pos, path)
     get_labels = lambda (tiles, pos, path): (tiles[1], pos, path)
     get_false_positives =  lambda (tiles, pos, path): (tiles[2], pos, path)
@@ -123,7 +141,7 @@ def visualise_results(results, tile_size, out_path):
     sorted_by_path = sorted(results, key=get_path)
     for path, result_tiles in itertools.groupby(sorted_by_path, get_path):
         raster_dataset = rasterio.open(path)
-        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1])
+        dataset_shape = (raster_dataset.shape[0], raster_dataset.shape[1])
 
         result_tiles = list(result_tiles)
         predictions = map(get_predictions, result_tiles)
@@ -133,19 +151,9 @@ def visualise_results(results, tile_size, out_path):
         satellite_img_name = get_file_name(path)
         out_file_name = "{}_results.tif".format(satellite_img_name)
         out = os.path.join(out_path, out_file_name)
+        # We first write the labels in blue, then predictions in green and then false positives in red.
+        # This way the true positives will be green, false positives red, false negatives blue and everything
+        # else in the image will be true negatives.
         for tiles, color in [(labels, 'blue'), (predictions, 'green'), (false_positives, 'red')]:
-            bitmap = image_from_tiles(tiles, tile_size, bitmap_shape)
+            bitmap = image_from_tiles(tiles, tile_size, dataset_shape)
             raster_dataset = overlay_bitmap(bitmap, raster_dataset, out, color=color)
-
-def visualise(feautures, tile_size, out_path, colors=['blue']):
-    get_path = lambda (tiles, pos, path): path
-    sorted_by_path = sorted(features, key=get_path)
-    for path, tile_data in itertools.groupby(sorted_by_path, get_path):
-        raster_dataset = rasterio.open(path)
-        bitmap_shape = (raster_dataset.shape[0], raster_dataset.shape[1])
-
-        get_tiles = lambda (tiles, pos, path): tiles
-        tiles = map(get_tiles, tile_data)
-        tiles_colors = zip(zip(*tiles), colors)
-
-        # TODO: do the loop from 147.
