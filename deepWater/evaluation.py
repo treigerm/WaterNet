@@ -39,8 +39,14 @@ def evaluate_model(model, features, labels, tile_size, out_path):
     # comparing the elements in the list of labels and predictions elemtwise. So if we would not flatten
     # our results we would only get a true positive if we would predict every pixel in an entire tile right.
     # But we obviously only care about each pixel individually.
-    print("Accuracy on test set: {}".format(metrics.accuracy_score(y_true.flatten(), predicted_bitmap.flatten())))
-    precision_recall_curve(y_true.flatten(), y_predicted.flatten(), out_path)
+    y_true = y_true.flatten()
+    y_predicted = y_predicted.flatten()
+    predicted_bitmap = predicted_bitmap.flatten()
+
+    print("Accuracy on test set: {}".format(metrics.accuracy_score(y_true, predicted_bitmap)))
+    print("Precision on test set: {}".format(metrics.precision_score(y_true, predicted_bitmap)))
+    print("Recall on test set: {}".format(metrics.recall_score(y_true, predicted_bitmap)))
+    precision_recall_curve(y_true, y_predicted, out_path)
 
 
 def visualise_predictions(predictions, labels, false_positives, tile_size, out_path):

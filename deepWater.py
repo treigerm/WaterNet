@@ -6,10 +6,11 @@ import os
 import sys
 from deepWater.config import DATASETS, OUTPUT_DIR, TRAIN_DATA_DIR, LABELS_DIR
 from deepWater.preprocessing import preprocess_data
-from deepWater.model import init_model, train_model
+from deepWater.model import init_model, train_model, compile_model
 from deepWater.evaluation import evaluate_model
 from deepWater.io_util import save_makedirs, save_model_summary, load_model, create_directories
-from deepWater.geo_util import visualise_features
+from deepWater.geo_util import visualise_labels
+
 
 def create_parser():
     parser = argparse.ArgumentParser(description="Train a convolutional neural network to predict water in satellite images.")
@@ -108,14 +109,14 @@ def main():
         create_directories()
 
     if args.debug:
-        dataset = datasets["debug"]
+        dataset = DATASETS["debug"]
         args.dataset = "debug"
         features, _, labels, _ = preprocess_data(
             args.tile_size, dataset=dataset)
         features_train, features_test = features[:100], features[100:120]
         labels_train, labels_test = labels[:100], labels[100:120]
     elif args.train_model or args.evaluate_model or args.preprocess_data:
-        dataset = datasets[args.dataset]
+        dataset = DATASETS[args.dataset]
         load_from_cache = not args.preprocess_data
         try:
             features_train, features_test, labels_train, labels_test = preprocess_data(
@@ -139,35 +140,37 @@ def main():
         save_makedirs(model_dir)
 
 
+    # Hyperparameters for the model. Since there are so many of them it is
+    # more convenient to set them in the source code as opposed to passing
+    # them as arguments to the CLI. We use a list of tuples instead of a
+    # dict since we want to print the hyperparameters and for that purpose
+    # keep them in the predefined order.
+    hyperparameters = [
+        ("architecture", args.architecture),
+        # Hyperparameters for the first convolutional layer.
+        ("nb_filters_1", 64),
+        ("filter_size_1", 7),
+        ("stride_1", (3, 3)),
+        # Hyperparameter for the first pooling layer.
+        ("pool_size_1", (4, 4)),
+        # Hyperparameters for the second convolutional layer (when two layer
+        # architecture is used).
+        ("nb_filters_2", 128),
+        ("filter_size_2", 3),
+        ("stride_2", (2, 2)),
+        # Hyperparameters for Stochastic Gradient Descent.
+        ("learning_rate", 0.005),
+        ("momentum", 0.9),
+        ("decay", 0.002)
+    ]
+
     if args.init_model:
-        # Hyperparameters for the model. Since there are so many of them it is
-        # more convenient to set them in the source code as opposed to passing
-        # them as arguments to the CLI. We use a list of tuples instead of a
-        # dict since we want to print the hyperparameters and for that purpose
-        # keep them in the predefined order.
-        hyperparameters = [
-            ("architecture", args.architecture),
-            # Hyperparameters for the first convolutional layer.
-            ("nb_filters_1", 64),
-            ("filter_size_1", 7),
-            ("stride_1", (3, 3)),
-            # Hyperparameter for the first pooling layer.
-            ("pool_size_1", (4, 4)),
-            # Hyperparameters for the second convolutional layer (when two layer
-            # architecture is used).
-            ("nb_filters_2", 128),
-            ("filter_size_2", 3),
-            ("stride_2", (2, 2)),
-            # Hyperparameters for Stochastic Gradient Descent.
-            ("learning_rate", 0.005),
-            ("momentum", 0.9),
-            ("decay", 0.002)
-        ]
         model = init_model(args.tile_size, model_id, **dict(hyperparameters))
         save_model_summary(hyperparameters, model, model_dir)
     elif args.train_model or args.evaluate_model:
-        # FIXME: has to be compiled when trained.
+        hyperparameters = dict(hyperparameters)
         model = load_model(model_id)
+        model = compile_model(model, hyperparameters["learning_rate"], hyperparameters["momentum"], hyperparameters["decay"])
 
     if args.train_model:
         model = train_model(

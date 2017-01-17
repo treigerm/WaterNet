@@ -106,12 +106,7 @@ def init_model(tile_size,
         model.add(Activation('sigmoid'))
 
 
-    momentum = SGD(lr=learning_rate, momentum=momentum, decay=decay)
-
-    model.compile(
-        loss='categorical_crossentropy',
-        optimizer=momentum,
-        metrics=['accuracy'])
+    model = compile_model(model, learning_rate, momentum, decay)
 
     # Print a summary of the model to the console.
     model.summary()
@@ -123,6 +118,18 @@ def init_model(tile_size,
 
     return model
 
+
+def compile_model(model, learning_rate, momentum, decay):
+    """Compile the keras model with the given hyperparameters."""
+
+    optimizer = SGD(lr=learning_rate, momentum=momentum, decay=decay)
+
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer=optimizer,
+        metrics=['accuracy'])
+
+    return model
 
 def normalise_input(features):
     """Normalise the features such that all values are in the range [0,1]."""
