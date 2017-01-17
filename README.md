@@ -4,7 +4,7 @@ Using publicly available satellite imagery and OSM data we train a convolutional
 
 ![Figure 1](/../images/imgs/figure_1.jpg)
 
-The picture is part of an example output of the classifier. The green parts are true positives, the red parts are false positives, the blue parts are false negatives and the rest are true negatives. With only 20 minutes of training I was able to train a classifier which has 96.38 % accuracy, 74.2 % precision and 49.04 % recall. As mentioned above, my goal was not to find the best classifier for this task but more to give an example of a simple architecture which allows to train a neural net on satellite data. I am certain that with a little bit more work it will be easy to create a significantly better classifier.
+The picture is part of an example output of the classifier. The green parts are true positives, the red parts are false positives, the blue parts are false negatives and the rest are true negatives. With only 20 minutes of training I was able to train a classifier which has 96.38 % accuracy, 74.2 % precision and 49.04 % recall. As mentioned above, my goal was not to find the best classifier for this task but more to give an example of a simple architecture which allows to train a neural net on satellite data. I am certain that with a little bit more work it will be possible to create a significantly better classifier.
 
 ## Functionality
 
@@ -56,6 +56,7 @@ I tried to follow Ali Eslami's great [blog post](http://arkitus.com/patterns-for
     /Shapefiles
   /working
     /models
+      /{model_id}
     /train_data
       /labels_images
       /tiles
@@ -65,6 +66,8 @@ I tried to follow Ali Eslami's great [blog post](http://arkitus.com/patterns-for
     /{model_id}
     /tensorboard
 ```
+
+All the metrics and hyperparameters of a model are stored in `/output/{model-id}` model weights are stored under `/working/models/{model-id}`. The model ID is a string consisting of the current timestamp, the dataset that is used and the neural net architecture. `/output/tensorboard` contains the logs for tensorboard. The last repository which might be of interest is `/working/train_data/labels_images` which contains the visualisations of the water polygons for a satellite images. These images will be created if you run the script with the `-v` tag. The remaining directories in `/working/train_data` are used as caches for the preproccesing of the data.
 
 ## Downloads
 
