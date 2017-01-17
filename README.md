@@ -2,9 +2,9 @@
 
 Using publicly available satellite imagery and OSM data we train a convolutional neural net to predict water occurrences in satellite images. DeepWater is not supposed to achive state of the art results but rather to be a simple example of a machine learning technique applied to geospatial data.
 
-![Example output](/../images/imgs/budapest.jpg)
+![Figure 1](/../images/imgs/figure_1.jpg)
 
-TODO: Explain picture and give best results.
+The picture is part of an example output of the classifier. The green parts are true positives, the red parts are false positives, the blue parts are false negatives and the rest are true negatives. With only 20 minutes of training I was able to train a classifier which has 96.38 % accuracy, 74.2 % precision and 49.04 % recall. However, I did not spend a lot of time on optimising the hyperparameters and playing with the neural network architecture so I am sure that with only a little bit of work you should be able to achieve better results.
 
 ## Functionality
 
@@ -61,8 +61,6 @@ I tried to follow Ali Eslami's great [blog post](http://arkitus.com/patterns-for
     /{model_id}
     /tensorboard
 ```
-
-## Things left to do
 
 ## Downloads
 
