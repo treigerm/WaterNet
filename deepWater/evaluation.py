@@ -9,9 +9,10 @@ import pickle
 import os
 import numpy as np
 from sklearn import metrics
-import matplotlib.pyplot as plt
 from geo_util import visualise_results
 from model import get_matrix_form
+
+import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 
 

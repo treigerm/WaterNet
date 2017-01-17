@@ -25,8 +25,8 @@ TENSORBOARD_DIR = join(OUTPUT_DIR, "tensorboard")
 
 # Paths to the shapefiles.
 MUENSTER_SHAPEFILE = join(SHAPEFILE_DIR, "muenster-regbez-latest-free", "gis.osm_water_a_free_1.shp")
-NETHERLANDS_SHAPEFILE = join(SHAPEFILE_DIR, "netherlands-latest-free", "gis.osm_water_nl_free_1.shp")
-NRW_SHAPEFILE = join(SHAPEFILE_DIR, "nordrhein-westfalen-latest-free", "gis.osm_water_nrw_free_1.shp")
+NETHERLANDS_SHAPEFILE = join(SHAPEFILE_DIR, "netherlands-latest-free", "gis.osm_water_a_free_1.shp")
+NRW_SHAPEFILE = join(SHAPEFILE_DIR, "nordrhein-westfalen-latest-free", "gis.osm_water_a_free_1.shp")
 OCEAN_SHAPEFILE = join(SHAPEFILE_DIR, "water-polygons-split-4326", "ocean_polygons.shp")
 BAYERN_SHAPEFILE = join(SHAPEFILE_DIR, "bayern-latest-free", "gis.osm_water_a_free_1.shp")
 ENGLAND_SHAPEFILE = join(SHAPEFILE_DIR, "england-latest-free", "gis.osm_water_a_free_1.shp")

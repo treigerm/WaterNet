@@ -7,10 +7,8 @@ import rasterio
 import rasterio.features
 import rasterio.warp
 import os
-from config import TILES_DIR
-from config import WATER_BITMAPS_DIR
-from geo_util import create_tiles
-from geo_util import reproject_dataset
+from config import TILES_DIR, WATER_BITMAPS_DIR
+from geo_util import create_tiles, reproject_dataset
 from io_util import get_file_name, save_tiles, save_tiles, save_bitmap, load_bitmap
 import numpy as np
 

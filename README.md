@@ -4,7 +4,7 @@ Using publicly available satellite imagery and OSM data we train a convolutional
 
 ![Figure 1](/../images/imgs/figure_1.jpg)
 
-The picture is part of an example output of the classifier. The green parts are true positives, the red parts are false positives, the blue parts are false negatives and the rest are true negatives. With only 20 minutes of training I was able to train a classifier which has 96.38 % accuracy, 74.2 % precision and 49.04 % recall. However, I did not spend a lot of time on optimising the hyperparameters and playing with the neural network architecture so I am sure that with only a little bit of work you should be able to achieve better results.
+The picture is part of an example output of the classifier. The green parts are true positives, the red parts are false positives, the blue parts are false negatives and the rest are true negatives. With only 20 minutes of training I was able to train a classifier which has 96.38 % accuracy, 74.2 % precision and 49.04 % recall. As mentioned above, my goal was not to find the best classifier for this task but more to give an example of a simple architecture which allows to train a neural net on satellite data. I am certain that with a little bit more work it will be easy to create a significantly better classifier.
 
 ## Functionality
 
@@ -21,7 +21,7 @@ DeepWater can do the following things:
 
 ## Installation
 
-For running the program yourself you will need Docker, some actual satellite imagery and corresponding shapefiles to create the labels.
+For running the program yourself you will need some actual satellite imagery and corresponding shapefiles to create the labels. For convenience I also included a Dockerfile.
 
 ### Getting the data
 
@@ -40,7 +40,11 @@ Here `/path/to/data` is the path to the data directory described in [Data direct
 ```
 $ deepWater -h
 ```
-to get information about how to use the program.
+to get information about how to use the program. If you haven't already created all the folders in the `working` and `output` directories you will also want to run
+```
+$ deepWater --setup
+```
+
 
 ## Data directory
 
@@ -70,11 +74,12 @@ Downloads of shapefiles are provided [here](http://download.geofabrik.de/). Thes
 ```
 Netherlands
 England
-Bayern (sub-region of Germany)
-Nordrhein-Westfalen (sub-region of Germany)
+Bayern (subregion of Germany)
+Nordrhein-Westfalen (subregion of Germany)
 Hungary
-Nord-est (sub-region of Italy)
+Nord-est (subregion of Italy)
 ```
+After you downloaded the shapefiles, place the expanded zip files in the `Shapefiles` directory and remove the ".shp" extension from the folder.
 
 ### Satellite images
 
@@ -86,11 +91,14 @@ S2A_OPER_MSI_L1C_TL_SGS__20160929T103545_20160929T154211_A006640_T32UPU_N02_04_0
 S2A_OPER_MSI_L1C_TL_SGS__20160719T112949_20160719T165219_A005611_T30UVE_N02_04_01
 S2A_OPER_MSI_L1C_TL_SGS__20161115T101822_20161115T171903_A007312_T32TQR_N02_04_01
 L1C_T30UXC_A007999_20170102T111441
-
 S2A_OPER_MSI_L1C_TL_SGS__20161129T100308_20161129T134154_A007512_T33TYN_N02_04_01
 ```
-
+After you downloaded the image, place them in a directory named `Sentinel-2` under the `input` directory.
 Please take a look at the config.py file to see which shapefiles belong to which satellite images.
+
+## Pull requests welcome
+
+I am new to geospatial analysis and writing machine learning code, so if you have ideas about how to improve this program you are more than welcome to open an issue or create a pull request!
 
 ## Acknowledgements
 

@@ -7,8 +7,7 @@ from keras.optimizers import SGD
 from keras.callbacks import ModelCheckpoint, TensorBoard
 import os
 import numpy as np
-from config import MODELS_DIR
-from config import TENSORBOARD_DIR
+from config import MODELS_DIR, TENSORBOARD_DIR
 from io_util import save_makedirs, save_model
 
 
