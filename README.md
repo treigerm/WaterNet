@@ -96,4 +96,4 @@ Please take a look at the config.py file to see which shapefiles belong to which
 
 [DeepOSM](https://github.com/trailbehind/DeepOSM) from [TrailBehind](https://github.com/trailbehind) helped a lot to get started on this project. It also links to several useful articles and related projects. 
 
-Volodymyr Mnih's PhD thesis [Machine Learning for Aerial Image Labeling](https://www.cs.toronto.edu/~vmnih/docs/Mnih_Volodymyr_PhD_Thesis.pdf) was a great read and helped a lot to build ConvNet architecture.
+Volodymyr Mnih's PhD thesis [Machine Learning for Aerial Image Labeling](https://www.cs.toronto.edu/~vmnih/docs/Mnih_Volodymyr_PhD_Thesis.pdf) was a great read and helped a lot to the build ConvNet architecture.
