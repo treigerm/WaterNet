@@ -1,6 +1,6 @@
-# DeepWater
+# WaterNet
 
-Using publicly available satellite imagery and OSM data we train a convolutional neural net to predict water occurrences in satellite images. DeepWater is not supposed to achive state of the art results but rather to be a simple example of a machine learning technique applied to geospatial data.
+Using publicly available satellite imagery and OSM data we train a convolutional neural net to predict water occurrences in satellite images. WaterNet is not supposed to achive state of the art results but rather to be a simple example of a machine learning technique applied to geospatial data.
 
 ![Figure 1](/../images/imgs/figure_1.jpg)
 
@@ -8,7 +8,7 @@ The picture is part of an example output of the classifier. The green parts are 
 
 ## Functionality
 
-DeepWater can do the following things:
+WaterNet can do the following things:
 
 - Train a neural network with GeoTIFF satellite images and OSM shapefiles
 - Create a visualisation of the neural nets predictions on the test dataset
@@ -33,16 +33,16 @@ First you will need to install Docker. You can find instructions on how to do th
 
 Then build and start the container with 
 ```
-$ docker build -t deep_water .
-$ docker run -v /path/to/data:/data -it deep_water /bin/bash
+$ docker build -t water_net .
+$ docker run -v /path/to/data:/data -it water_net /bin/bash
 ```
 Here `/path/to/data` is the path to the data directory described in [Data directory](#data-directory). In the container simply type
 ```
-$ deepWater -h
+$ waterNet -h
 ```
 to get information about how to use the program. If you haven't already created all the folders in the `working` and `output` directories you will also want to run
 ```
-$ deepWater --setup
+$ waterNet --setup
 ```
 
 

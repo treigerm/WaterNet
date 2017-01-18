@@ -4,12 +4,12 @@ import argparse
 import time
 import os
 import sys
-from deepWater.config import DATASETS, OUTPUT_DIR, TRAIN_DATA_DIR, LABELS_DIR
-from deepWater.preprocessing import preprocess_data
-from deepWater.model import init_model, train_model, compile_model
-from deepWater.evaluation import evaluate_model
-from deepWater.io_util import save_makedirs, save_model_summary, load_model, create_directories
-from deepWater.geo_util import visualise_labels
+from waterNet.config import DATASETS, OUTPUT_DIR, TRAIN_DATA_DIR, LABELS_DIR
+from waterNet.preprocessing import preprocess_data
+from waterNet.model import init_model, train_model, compile_model
+from waterNet.evaluation import evaluate_model
+from waterNet.io_util import save_makedirs, save_model_summary, load_model, create_directories
+from waterNet.geo_util import visualise_labels
 
 
 def create_parser():
