@@ -7,6 +7,7 @@ import rasterio
 import rasterio.features
 import rasterio.warp
 import os
+import sys
 from config import TILES_DIR, WATER_BITMAPS_DIR
 from geo_util import create_tiles, reproject_dataset
 from io_util import get_file_name, save_tiles, save_tiles, save_bitmap, load_bitmap
@@ -140,15 +141,19 @@ def create_bitmap(raster_dataset, shapefile_paths, satellite_path):
 
     print("Create bitmap for water features.")
     for shapefile_path in shapefile_paths:
-        print("Load shapefile {}.".format(shapefile_path))
-        with fiona.open(shapefile_path) as shapefile:
-            # Each feature in the shapefile also contains meta information such as
-            # wether the features is a lake or a river. We only care about the geometry
-            # of the feature i.e. where it is located and what shape it has.
-            geometries = [feature['geometry'] for feature in shapefile]
+        try:
+            print("Load shapefile {}.".format(shapefile_path))
+            with fiona.open(shapefile_path) as shapefile:
+                # Each feature in the shapefile also contains meta information such as
+                # wether the features is a lake or a river. We only care about the geometry
+                # of the feature i.e. where it is located and what shape it has.
+                geometries = [feature['geometry'] for feature in shapefile]
 
-            water_features = np.concatenate(
-                (water_features, geometries), axis=0)
+                water_features = np.concatenate(
+                    (water_features, geometries), axis=0)
+        except IOError as e:
+            print("No shapefile found.")
+            sys.exit(1)
 
     # Now that we have the vector data of all water features in our satellite image
     # we "burn it" into a new raster so that we get a B/W image with water features
