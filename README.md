@@ -16,7 +16,7 @@ WaterNet can do the following things:
 - Print hyperparameters of the neural net to a .txt file
 - Use tensorboard for logging
 - Save models with weights to disk for later usage
-- Choose between dataset
+- Choose between datasets
 - Run different computations seperately e.g. we can decide to only preprocess the data or only evaluate an alreaday trained model
 
 ## Installation
@@ -107,4 +107,4 @@ I am new to geospatial analysis and writing machine learning code, so if you hav
 
 [DeepOSM](https://github.com/trailbehind/DeepOSM) from [TrailBehind](https://github.com/trailbehind) helped a lot to get started on this project. It also links to several useful articles and related projects. 
 
-Volodymyr Mnih's PhD thesis [Machine Learning for Aerial Image Labeling](https://www.cs.toronto.edu/~vmnih/docs/Mnih_Volodymyr_PhD_Thesis.pdf) was a great read and helped a lot to the build ConvNet architecture.
+Volodymyr Mnih's PhD thesis [Machine Learning for Aerial Image Labeling](https://www.cs.toronto.edu/~vmnih/docs/Mnih_Volodymyr_PhD_Thesis.pdf) was a great read and helped a lot to build the ConvNet architecture.
