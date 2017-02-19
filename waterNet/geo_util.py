@@ -2,6 +2,7 @@
 
 import rasterio
 import rasterio.warp
+import fiona
 import os
 import itertools
 import numpy as np
@@ -108,6 +109,19 @@ def overlay_bitmap(bitmap, raster_dataset, out_path, color='blue'):
     return rasterio.open(out_path)
 
 
+def create_shapefile(bitmap, raster_dataset, out_path):
+    """TODO: Docstring."""
+
+    shapes = rasterio.features.shapes(bitmap, transform=raster_dataset.transform)
+    records = map(lambda (geom, _): {"geometry": geom, "properties": {}}, shapes)
+    schema = {
+        "geometry": "Polygon",
+        "properties": {}
+    }
+    with fiona.open(out_path, 'w', driver="ESRI Shapefile", crs=raster_dataset.crs, schema=schema) as f:
+        f.writerecords(records)
+
+
 def visualise_labels(labels, tile_size, out_path):
     """Given the labels of a satellite image as tiles. Overlay the source image with the labels
     to check if labels are roughly correct."""
@@ -127,7 +141,7 @@ def visualise_labels(labels, tile_size, out_path):
         out = os.path.join(out_path, out_file_name)
         overlay_bitmap(bitmap, raster_dataset, out)
 
-def visualise_results(results, tile_size, out_path):
+def visualise_results(results, tile_size, out_path, out_format="GeoTIFF"):
     """Given the predictions, false positves and the labels of our model visualise them on the satellite
     image they belong to."""
 
@@ -149,11 +163,17 @@ def visualise_results(results, tile_size, out_path):
         false_positives = map(get_false_positives, result_tiles)
 
         satellite_img_name = get_file_name(path)
-        out_file_name = "{}_results.tif".format(satellite_img_name)
+        file_extension = "tif" if out_format == "GeoTIFF" else "shp"
+        out_file_name = "{}_results.{}".format(satellite_img_name, file_extension)
         out = os.path.join(out_path, out_file_name)
-        # We first write the labels in blue, then predictions in green and then false positives in red.
-        # This way the true positives will be green, false positives red, false negatives blue and everything
-        # else in the image will be true negatives.
-        for tiles, color in [(labels, 'blue'), (predictions, 'green'), (false_positives, 'red')]:
-            bitmap = image_from_tiles(tiles, tile_size, dataset_shape)
-            raster_dataset = overlay_bitmap(bitmap, raster_dataset, out, color=color)
+
+        if out_format == "GeoTIFF":
+            # We first write the labels in blue, then predictions in green and then false positives in red.
+            # This way the true positives will be green, false positives red, false negatives blue and everything
+            # else in the image will be true negatives.
+            for tiles, color in [(labels, 'blue'), (predictions, 'green'), (false_positives, 'red')]:
+                bitmap = image_from_tiles(tiles, tile_size, dataset_shape)
+                raster_dataset = overlay_bitmap(bitmap, raster_dataset, out, color=color)
+        elif out_format == "Shapefile":
+            bitmap = image_from_tiles(predictions, tile_size, dataset_shape)
+            create_shapefile(bitmap, raster_dataset, out)

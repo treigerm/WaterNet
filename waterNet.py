@@ -97,6 +97,11 @@ def create_parser():
         action="store_const",
         const=True,
         help="Create all necessary directories for the classifier to work.")
+    parser.add_argument(
+        "--out-format",
+        default="GeoTIFF",
+        choices=["GeoTIFF", "Shapefile"],
+        help="Determine the format of the output for the evaluation method.")
 
     return parser
 
@@ -185,7 +190,7 @@ def main():
 
     if args.evaluate_model:
         evaluate_model(model, features_test, labels_test, args.tile_size,
-                       model_dir)
+                       model_dir, out_format=args.out_format)
 
 
 if __name__ == '__main__':

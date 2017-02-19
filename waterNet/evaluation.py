@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 
 
-def evaluate_model(model, features, labels, tile_size, out_path):
+def evaluate_model(model, features, labels, tile_size, out_path, out_format="GeoTIFF"):
     """Calculate several metrics for the model and create a visualisation of the test dataset."""
 
     print('_' * 100)
@@ -34,7 +34,7 @@ def evaluate_model(model, features, labels, tile_size, out_path):
     predicted_bitmap[predicted_bitmap < 0.5] = 0
 
     false_positives = get_false_positives(predicted_bitmap, y_true)
-    visualise_predictions(predicted_bitmap, labels, false_positives, tile_size, out_path)
+    visualise_predictions(predicted_bitmap, labels, false_positives, tile_size, out_path, out_format=out_format)
 
     # We have to flatten our predictions and labels since by default the metrics are calculated by
     # comparing the elements in the list of labels and predictions elemtwise. So if we would not flatten
@@ -50,10 +50,10 @@ def evaluate_model(model, features, labels, tile_size, out_path):
     precision_recall_curve(y_true, y_predicted, out_path)
 
 
-def visualise_predictions(predictions, labels, false_positives, tile_size, out_path):
+def visualise_predictions(predictions, labels, false_positives, tile_size, out_path, out_format="GeoTIFF"):
     """Create a new GeoTIFF image which overlays the predictions of the model."""
 
-    print("Create .tif result files.")
+    print("Create {} result files.".format(out_format))
     predictions = np.reshape(predictions,
                              (len(labels), tile_size, tile_size, 1))
     false_positives = np.reshape(false_positives,
@@ -70,7 +70,7 @@ def visualise_predictions(predictions, labels, false_positives, tile_size, out_p
         results.append(
             ((prediction_tile, label_tile, false_positivle_tile), position, path_to_geotiff))
 
-    visualise_results(results, tile_size, out_path)
+    visualise_results(results, tile_size, out_path, out_format=out_format)
 
 
 def precision_recall_curve(y_true, y_predicted, out_path):
